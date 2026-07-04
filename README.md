@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏥 Medical Disease RAG System
 **DS205.3 – Data Science with Python | Group Coursework**
 
@@ -123,3 +124,7 @@ The system is evaluated using 10 ground-truth Q&A pairs scored by an LLM judge (
 
 ## ⚠️ Disclaimer
 This system is for educational purposes only. It is not a substitute for professional medical advice.
+=======
+# diseases-rag-chatbot-DS205.3-coursework
+A Hybrid RAG Chatbot for Diseases and Symptoms 
+>>>>>>> 28ec13da28a7e3a6dd858bbef1a3eab0a5196848
