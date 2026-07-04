@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What are the common symptoms of Type 2 Diabetes?",
+    "answer": "Common symptoms include increased thirst, frequent urination, blurred vision, fatigue, slow-healing sores, and frequent infections."
+  },
+  {
+    "question": "What is the recommended first-line treatment for hypertension?",
+    "answer": "Lifestyle modifications including dietary changes, reduced sodium intake, regular exercise, and weight loss, followed by ACE inhibitors or thiazide diuretics if needed."
+  },
+  {
+    "question": "What are the warning signs of a heart attack?",
+    "answer": "Chest pain or pressure, shortness of breath, pain radiating to arm or jaw, nausea, cold sweat, and lightheadedness."
+  },
+  {
+    "question": "What causes pneumonia?",
+    "answer": "Pneumonia can be caused by bacteria (most commonly Streptococcus pneumoniae), viruses (influenza, COVID-19), or fungi."
+  },
+  {
+    "question": "What are the symptoms of dengue fever?",
+    "answer": "High fever, severe headache, pain behind the eyes, joint and muscle pain, rash, and mild bleeding."
+  },
+  {
+    "question": "How is asthma diagnosed?",
+    "answer": "Diagnosis involves spirometry tests to measure lung function, peak flow measurement, chest X-ray, and allergy testing."
+  },
+  {
+    "question": "What is the difference between Type 1 and Type 2 Diabetes?",
+    "answer": "Type 1 is an autoimmune condition where the pancreas produces no insulin; Type 2 involves insulin resistance and is often linked to lifestyle factors."
+  },
+  {
+    "question": "What are the early symptoms of tuberculosis?",
+    "answer": "Persistent cough lasting more than 3 weeks, blood in sputum, chest pain, fatigue, night sweats, and unexplained weight loss."
+  },
+  {
+    "question": "What complications can arise from untreated high blood pressure?",
+    "answer": "Heart attack, stroke, kidney disease, vision loss, aneurysm, and heart failure."
+  },
+  {
+    "question": "What are the symptoms of iron deficiency anaemia?",
+    "answer": "Fatigue, weakness, pale skin, shortness of breath, dizziness, cold hands and feet, brittle nails, and cravings for non-food substances."
+  }
+]
