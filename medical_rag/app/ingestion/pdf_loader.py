@@ -10,7 +10,7 @@ class PDFIngester(BaseIngester):
     and splits into overlapping chunks for optimal RAG retrieval.
     """
 
-    def __init__(self, chunk_size: int = 500, chunk_overlap: int = 100):
+    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 128):
         """
         Args:
             chunk_size: Number of characters per chunk.
