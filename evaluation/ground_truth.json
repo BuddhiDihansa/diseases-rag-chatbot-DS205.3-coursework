@@ -1,0 +1,54 @@
+{
+  "qa_pairs": [
+    {
+      "id": "q1",
+      "question": "What are the symptoms of Dengue fever?",
+      "expected_answer": "High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash."
+    },
+    {
+      "id": "q2",
+      "question": "What is diabetes?",
+      "expected_answer": "A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels."
+    },
+    {
+      "id": "q3",
+      "question": "What are the symptoms of asthma?",
+      "expected_answer": "Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning."
+    },
+    {
+      "id": "q4",
+      "question": "What should someone with dengue avoid?",
+      "expected_answer": "Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration."
+    },
+    {
+      "id": "q5",
+      "question": "What are the common symptoms of typhoid fever?",
+      "expected_answer": "Sustained high fever, weakness, stomach pain, headache, and loss of appetite."
+    },
+    {
+      "id": "q6",
+      "question": "How is hypertension managed?",
+      "expected_answer": "Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor."
+    },
+    {
+      "id": "q7",
+      "question": "What are the symptoms of a common cold vs COVID-19?",
+      "expected_answer": "Both can cause cough, sore throat, and fatigue, but COVID-19 more commonly causes loss of taste/smell and can lead to more severe respiratory symptoms."
+    },
+    {
+      "id": "q8",
+      "question": "What are the warning signs of a heart attack?",
+      "expected_answer": "Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness."
+    },
+    {
+      "id": "q9",
+      "question": "What is the recommended treatment for mild asthma attacks?",
+      "expected_answer": "Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers."
+    },
+    {
+      "id": "q10",
+      "question": "What precautions should a diabetic patient take with their diet?",
+      "expected_answer": "Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly."
+    }
+  ]
+}
