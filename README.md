@@ -1,130 +1,126 @@
-<<<<<<< HEAD
-# 🏥 Medical Disease RAG System
-**DS205.3 – Data Science with Python | Group Coursework**
+# MediGuide LK — Medical AI Multi-Agent RAG System
 
-A Retrieval-Augmented Generation (RAG) system for medical disease diagnosis assistance. Users upload medical PDFs and query the system with symptoms to receive grounded, traceable answers.
+A Retrieval-Augmented Generation (RAG) system that answers medical questions by retrieving grounded context from a private corpus of medical guideline documents, then reasoning over that context using a multi-agent pipeline — rather than relying on an LLM's raw (and potentially outdated or hallucinated) knowledge.
 
----
+Built for **DS205.3 — Data Science with Python** (Coursework Assessment 1).
 
-## 🏗️ Architecture
+## Problem statement
 
-```
-User Query (Symptoms)
-        │
-        ▼
-┌──────────────────┐
-│  Streamlit UI    │  ← main.py
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  MedicalRetriever│  ← app/retrieval/retriever.py
-│  (Query Embed)   │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  ChromaVectorStore│ ← app/vectorstore/chroma_store.py
-│  (Persistent DB) │   ChromaDB on disk
-└────────┬─────────┘
-         │ Top-5 chunks
-         ▼
-┌──────────────────┐
-│  GroqGenerator   │  ← app/generation/llm_generator.py
-│  llama3-8b       │
-└────────┬─────────┘
-         │
-         ▼
-   Grounded Answer (with source citations)
-```
+Standard LLMs cannot be trusted for domain-specific medical guidance because they:
+- Have a training data cutoff and cannot access newly published or region-specific guidelines
+- Have no access to private/specialized documents (e.g. national treatment guidelines)
+- Can hallucinate confident-sounding but incorrect medical claims
 
-## 📁 Project Structure
+This system addresses that gap by grounding every answer in retrieved excerpts from real medical documents, and by verifying that the generated answer is actually supported by that retrieved context.
+
+## Architecture
 
 ```
-medical_rag/
-├── main.py                          ← Streamlit entry point
-├── requirements.txt
-├── .env.example
-├── app/
-│   ├── ingestion/
-│   │   ├── base.py                  ← Abstract Base Class
-│   │   └── pdf_loader.py            ← PyMuPDF PDF loader
-│   ├── vectorstore/
-│   │   ├── base.py                  ← Abstract Base Class
-│   │   └── chroma_store.py          ← ChromaDB persistent store
-│   ├── retrieval/
-│   │   ├── base.py                  ← Abstract Base Class
-│   │   └── retriever.py             ← Medical retriever with traceability
-│   ├── generation/
-│   │   ├── base.py                  ← Abstract Base Class
-│   │   └── llm_generator.py         ← Groq LLM generator
-│   └── evaluation/
-│       └── evaluator.py             ← Ground-truth evaluation script
-└── data/
-    ├── ground_truth.json            ← 10 Q&A pairs for evaluation
-    └── eval_results.json            ← Generated after running evaluator
+User Query
+   │
+   ▼
+SymptomAgent          — extracts structured symptoms from free text
+   │
+   ▼
+RetrieverAgent         — hybrid search (BM25 + FAISS vector search)
+   │                       over the persisted vector store
+   ▼
+ReasoningAgent         — generates a grounded answer using ONLY
+   │                       the retrieved context
+   ▼
+VerificationAgent      — checks the answer against the retrieved
+   │                       context for unsupported claims
+   ▼
+Final Answer + Verification Verdict
 ```
 
-## ⚙️ Setup Instructions
+See `reports/architecture_diagram.png` for the full data flow diagram (PDF → chunks → embeddings → vector store → LLM).
 
-### 1. Clone the repository
+### Why these design choices
+
+| Decision | Reasoning |
+|---|---|
+| FAISS instead of ChromaDB | ChromaDB's `chroma-hnswlib` dependency requires a C++ compiler to build on Windows. FAISS ships prebuilt wheels, avoiding install friction across the team. |
+| Hybrid search (BM25 + vector) | Vector search captures semantic meaning but can miss exact keyword matches (disease/drug names). BM25 catches those. Combining both improves retrieval quality. |
+| Chunk size 500 / overlap 50 | Balances keeping enough context per chunk against retrieval precision. Tested against 300 and 800 as alternatives (see report). |
+| Groq API (LLaMA 3.3 70B) | OpenAI-compatible API format, generous free tier, fast inference — suitable for a student project budget. |
+| Abstract `BaseAgent` class | Enforces a consistent `.run()` interface across all agents so the pipeline can call any agent polymorphically without knowing its internals. |
+
+## Project structure
+
+```
+medical_ai/
+├── agents/              # SymptomAgent, ReasoningAgent, VerificationAgent (+ BaseAgent ABC)
+├── ingestion/           # PDF loading, text cleaning, chunking
+├── retrieval/           # Embeddings, FAISS vector store, BM25 hybrid search, RetrieverAgent
+├── services/            # LLM API client, pipeline orchestrator
+├── evaluation/          # Ground-truth Q&A dataset, evaluator, evaluation runner
+├── config/              # Centralized settings
+├── utils/               # Shared logging utility
+├── tests/               # pytest test suite for agents, retrieval, ingestion, evaluation
+├── data/                # Raw PDFs, processed chunks, persisted FAISS index (gitignored)
+├── reports/             # Architecture diagram and supporting report assets
+├── build_database.py    # One-time / on-demand script: PDF → chunks → embeddings → FAISS + BM25
+├── main.py               # Entry point — interactive CLI
+└── requirements.txt
+```
+
+## Setup
+
+**Requirements:** Python 3.10+
+
+1. Clone the repository and create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate      # Windows: venv\Scripts\activate
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Copy the environment template and add your API key:
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env` and set `LLM_API_KEY` to your own Groq API key (get one free at https://console.groq.com).
+
+4. Add source PDFs to `data/raw_pdfs/` (medical guideline documents).
+
+5. Build the vector database (run once, or whenever the PDFs change):
+   ```bash
+   python build_database.py
+   ```
+
+6. Run the system:
+   ```bash
+   python main.py
+   ```
+
+## Running the evaluation
+
 ```bash
-git clone <your-github-repo-url>
-cd medical_rag
+python -m evaluation.run_evaluation
 ```
 
-### 2. Create and activate virtual environment
+This runs every question in `evaluation/ground_truth.json` through the full pipeline, scores each answer against the expected answer using semantic similarity + keyword overlap, and writes a results table to `evaluation/results.csv` — used directly in the report's Empirical Evaluation section.
+
+## Running tests
+
 ```bash
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
+pytest tests/ -v
 ```
 
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+## Team contributions
 
-### 4. Configure environment variables
-```bash
-cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
-```
-Get a free Groq API key at: https://console.groq.com
+| Member | Area |
+|---|---|
+| Member 1 | Data engineering — PDF ingestion, text cleaning, chunking |
+| Member 2 | Retrieval — embeddings, FAISS vector store, hybrid (BM25 + vector) search |
+| Member 3 | Agent logic — symptom extraction, grounded reasoning, hallucination verification |
+| Member 4 | Evaluation — ground-truth dataset, scoring framework, report |
 
-### 5. Run the application
-```bash
-streamlit run main.py
-```
+## Disclaimer
 
-### 6. Run evaluation
-```bash
-python -m app.evaluation.evaluator
-```
-
----
-
-## 🔑 Key Design Decisions
-
-| Decision | Choice | Justification |
-|---|---|---|
-| PDF Parser | PyMuPDF | Best text extraction fidelity for medical PDFs |
-| Embeddings | all-MiniLM-L6-v2 | Free, runs locally, strong semantic similarity |
-| Vector Store | ChromaDB (persistent) | Survives between sessions; cosine similarity |
-| LLM | Groq llama3-8b | Free tier, low latency, grounded by strict prompt |
-| Chunking | 500 chars / 100 overlap | Balances context richness and retrieval precision |
-
-## 🧪 Evaluation
-
-The system is evaluated using 10 ground-truth Q&A pairs scored by an LLM judge (0-10 faithfulness scale). Results are saved to `data/eval_results.json`.
-
----
-
-## ⚠️ Disclaimer
-This system is for educational purposes only. It is not a substitute for professional medical advice.
-=======
-# diseases-rag-chatbot-DS205.3-coursework
-A Hybrid RAG Chatbot for Diseases and Symptoms 
->>>>>>> 28ec13da28a7e3a6dd858bbef1a3eab0a5196848
+This system is a student coursework project for educational purposes. It is **not a substitute for professional medical advice, diagnosis, or treatment.**
