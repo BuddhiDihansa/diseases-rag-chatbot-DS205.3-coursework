@@ -2,19 +2,12 @@
 test_ingestion.py
 Tests for Member 1's ingestion module (pdf_loader, text_cleaner, chunker)
 
-<<<<<<< HEAD
 Run with: pytest test_ingestion.py -v
 """
 
 import pytest
 
 # Fixed import locations matching your new flat root directory structure
-=======
-Run with: pytest tests/test_ingestion.py -v
-"""
-
-import pytest
->>>>>>> develop
 from ingestion.text_cleaner import TextCleaner
 from ingestion.chunker import TextChunker
 
@@ -41,7 +34,6 @@ class TestTextCleaner:
         assert "WHO Fact Sheet" not in result
         assert "Diabetes is a chronic disease" in result
 
-<<<<<<< HEAD
     def test_medical_notation_preservation(self):
         """
         CRITICAL VIVA TEST: Ensures vital clinical dosage limits, ranges,
@@ -57,8 +49,6 @@ class TestTextCleaner:
         assert "μg" in result, "Safety Failure: Microgram dose notation symbol corrupted!"
         assert "±" in result, "Safety Failure: Measurement tolerance interval variation indicator lost!"
 
-=======
->>>>>>> develop
     def test_full_clean_pipeline(self):
         text = "WHO Fact Sheet\n\n\nDiabetes   is chronic.\n12"
         result = self.cleaner.clean(text, known_headers=["WHO Fact Sheet"])
