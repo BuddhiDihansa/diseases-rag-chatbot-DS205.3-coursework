@@ -58,7 +58,7 @@ TOP_K_RESULTS = 5
 
 
 # ---------- Data Paths ----------
-RAW_PDF_DIR = "data/raw_pdfs"
+RAW_PDF_DIR = "data/raw_pdf"
 PROCESSED_DATA_DIR = "data/processed"
 GROUND_TRUTH_PATH = "evaluation/ground_truth.json"
 EVALUATION_RESULTS_PATH = "evaluation/results.csv"
