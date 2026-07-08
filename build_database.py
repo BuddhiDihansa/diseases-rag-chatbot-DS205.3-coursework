@@ -24,7 +24,7 @@ def build_database():
     print("STEP 1: Loading PDFs")
     print("=" * 60)
 
-    loader = PDFLoader(pdf_folder="data/raw_pdfs")
+    loader = PDFLoader(pdf_folder="data/raw_pdf")
     raw_documents = loader.load_all_pdfs()
 
     if not raw_documents:

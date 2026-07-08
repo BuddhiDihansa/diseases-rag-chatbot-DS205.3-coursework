@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 venv/
 __pycache__/
 *.pyc
@@ -7,7 +7,7 @@ __pycache__/
 chroma_db/
 .DS_Store
 Thumbs.db
-=======
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -226,4 +226,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
->>>>>>> 28ec13da28a7e3a6dd858bbef1a3eab0a5196848
+
