@@ -63,7 +63,7 @@ Possible Condition:
 
 Confidence Note:
 ...
-
+"])
 Recommended Actions:
 - ...
 
@@ -87,4 +87,4 @@ if __name__ == "__main__":
     fake_context = "Dengue fever symptoms include high fever, headache, joint pain..."
     result = agent.run(symptoms="fever, headache, joint pain", retrieved_context=fake_context)
     print("\n--- Generated Answer ---")
-    print(result["generated_answer"])
+    print(result["generated_"])
