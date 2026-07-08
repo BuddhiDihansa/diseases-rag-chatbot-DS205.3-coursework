@@ -1,13 +1,5 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-""""
-=======
+
 """
->>>>>>> develop
-=======
-"""
->>>>>>> dihansa
-main.py
 Entry point - runs the full Medical AI system.
 
 Usage:
