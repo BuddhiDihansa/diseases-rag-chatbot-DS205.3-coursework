@@ -6,39 +6,63 @@ Purpose: Combine BM25 (keyword-based) search with vector (semantic) search.
 Why hybrid? Vector search is great for meaning/context, but can miss
 exact keyword matches (e.g. specific disease names, drug names).
 BM25 catches those exact matches. Combining both gives better retrieval.
+
+Optionally applies a third stage - cross-encoder re-ranking (see
+reranker.py) - on the combined shortlist for higher precision before
+the final top_k is returned.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from rank_bm25 import BM25Okapi  # pip install rank-bm25
 
 
 class HybridSearch:
     """
     Combines BM25 keyword search results with vector search results,
-    using a weighted score to rank the final results.
+    using a weighted score to rank the final results. Optionally
+    re-ranks the combined shortlist with a cross-encoder for higher
+    precision (see search() and the reranker param).
     """
 
     def __init__(self, vector_store, embedding_service, bm25_weight: float = 0.4,
-                 vector_weight: float = 0.6):
+                 vector_weight: float = 0.6, reranker: Optional[Any] = None):
         """
         vector_store: instance of VectorStore
         embedding_service: instance of EmbeddingService
         bm25_weight / vector_weight: how much each method contributes to final score
         (must sum to 1.0 - these values are worth tuning and justifying in your report)
+        reranker: optional CrossEncoderReranker instance (see reranker.py).
+        When provided, search() fetches a wider shortlist from the
+        BM25+vector stage, then hands it to the reranker for a final,
+        more accurate pass - see the module docstring in reranker.py
+        for why this two-stage design is used instead of relying on
+        BM25/vector scores alone.
         """
         self.vector_store = vector_store
         self.embedding_service = embedding_service
         self.bm25_weight = bm25_weight
         self.vector_weight = vector_weight
+        self.reranker = reranker
         self.bm25_index = None
-        self.corpus_chunks = []  # list of {"id":..., "text":...}
+        self.corpus_chunks = []  # list of {"id":..., "text":..., "metadata":...}
 
-    def build_bm25_index(self, chunk_ids: List[str], texts: List[str]):
+    def build_bm25_index(self, chunk_ids: List[str], texts: List[str],
+                          metadatas: List[Dict[str, Any]] = None):
         """
         Build the BM25 index from all chunks.
         Must be called once after all chunks are added to the vector store.
+
+        metadatas: optional list of {"source_document":..., "page_number":...}
+        aligned with chunk_ids/texts - carried through so search results can
+        cite exactly where each chunk came from.
         """
-        self.corpus_chunks = [{"id": cid, "text": text} for cid, text in zip(chunk_ids, texts)]
+        if metadatas is None:
+            metadatas = [{}] * len(chunk_ids)
+
+        self.corpus_chunks = [
+            {"id": cid, "text": text, "metadata": meta}
+            for cid, text, meta in zip(chunk_ids, texts, metadatas)
+        ]
         tokenized_corpus = [text.lower().split() for text in texts]
         self.bm25_index = BM25Okapi(tokenized_corpus)
         print(f"BM25 index built with {len(texts)} chunks.")
@@ -52,7 +76,12 @@ class HybridSearch:
         scores = self.bm25_index.get_scores(tokenized_query)
 
         scored_chunks = [
-            {"id": self.corpus_chunks[i]["id"], "text": self.corpus_chunks[i]["text"], "score": scores[i]}
+            {
+                "id": self.corpus_chunks[i]["id"],
+                "text": self.corpus_chunks[i]["text"],
+                "metadata": self.corpus_chunks[i].get("metadata", {}),
+                "score": scores[i]
+            }
             for i in range(len(scores))
         ]
         scored_chunks.sort(key=lambda x: x["score"], reverse=True)
@@ -62,12 +91,14 @@ class HybridSearch:
         """Search using semantic vector similarity."""
         query_embedding = self.embedding_service.embed_text(query)
         results = self.vector_store.query(query_embedding, top_k=top_k)
+        metadatas = results.get("metadatas", [[]])[0]
 
         scored_chunks = []
         for i, chunk_id in enumerate(results["ids"][0]):
             scored_chunks.append({
                 "id": chunk_id,
                 "text": results["documents"][0][i],
+                "metadata": metadatas[i] if i < len(metadatas) else {},
                 "score": 1 - results["distances"][0][i]  # convert distance to similarity
             })
         return scored_chunks
@@ -76,9 +107,19 @@ class HybridSearch:
         """
         Combine BM25 + vector search results using weighted scores.
         This is the main method other agents should call.
+
+        If a reranker was provided in the constructor, this method casts
+        a wider net first (top_k * 3 combined candidates instead of just
+        top_k) and lets the cross-encoder pick the final top_k from that
+        shortlist - this is what "optimized retrieval" means in practice:
+        BM25+vector narrows millions of possible chunks down to a
+        manageable shortlist fast, then the more accurate (but slower)
+        cross-encoder makes the final call on just that shortlist.
         """
-        bm25_results = self.bm25_search(query, top_k=top_k * 2)
-        vector_results = self.vector_search(query, top_k=top_k * 2)
+        shortlist_k = top_k * 3 if self.reranker else top_k
+
+        bm25_results = self.bm25_search(query, top_k=shortlist_k * 2)
+        vector_results = self.vector_search(query, top_k=shortlist_k * 2)
 
         # normalize scores to 0-1 range within each method, then combine
         combined_scores = {}
@@ -88,6 +129,7 @@ class HybridSearch:
             normalized = r["score"] / max_bm25
             combined_scores[r["id"]] = {
                 "text": r["text"],
+                "metadata": r.get("metadata", {}),
                 "score": normalized * self.bm25_weight
             }
 
@@ -97,16 +139,21 @@ class HybridSearch:
             else:
                 combined_scores[r["id"]] = {
                     "text": r["text"],
+                    "metadata": r.get("metadata", {}),
                     "score": r["score"] * self.vector_weight
                 }
 
-        final_results = [
-            {"id": cid, "text": data["text"], "score": data["score"]}
+        combined_results = [
+            {"id": cid, "text": data["text"], "metadata": data.get("metadata", {}), "score": data["score"]}
             for cid, data in combined_scores.items()
         ]
-        final_results.sort(key=lambda x: x["score"], reverse=True)
+        combined_results.sort(key=lambda x: x["score"], reverse=True)
+        shortlist = combined_results[:shortlist_k]
 
-        return final_results[:top_k]
+        if self.reranker:
+            return self.reranker.rerank(query, shortlist, top_k=top_k)
+
+        return shortlist[:top_k]
 
 
 # Example usage (for testing this file individually)
