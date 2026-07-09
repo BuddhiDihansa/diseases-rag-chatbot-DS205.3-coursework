@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 pymupdf>=1.24.0
 langchain-text-splitters>=0.2.0
 python-dotenv>=1.0.1
-=======
 # Core dependencies for MediGuide LK - Medical AI Multi-Agent RAG System
 
 # PDF processing (Member 1 - Data Engineering)
@@ -25,4 +23,3 @@ python-dotenv==1.0.1
 
 # Optional: if using RAGAS for advanced faithfulness scoring
 # ragas==0.1.9
->>>>>>> develop
