@@ -1,3 +1,4 @@
+
 """
 settings.py
 Shared configuration for the entire project.
@@ -17,6 +18,11 @@ from dotenv import load_dotenv  # pip install python-dotenv
 # Load variables from .env file into environment
 load_dotenv()
 
+
+# ---------- Chunking Settings ----------
+
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 50
 
 # ---------- LLM Settings ----------
 LLM_API_KEY = os.getenv("LLM_API_KEY")
@@ -52,7 +58,7 @@ TOP_K_RESULTS = 5
 
 
 # ---------- Data Paths ----------
-RAW_PDF_DIR = "data/raw_pdfs"
+RAW_PDF_DIR = "data/raw_pdf"
 PROCESSED_DATA_DIR = "data/processed"
 GROUND_TRUTH_PATH = "evaluation/ground_truth.json"
 EVALUATION_RESULTS_PATH = "evaluation/results.csv"
@@ -77,3 +83,4 @@ if __name__ == "__main__":
     print(f"Embedding Model: {EMBEDDING_MODEL}")
     print(f"Chunk Size: {CHUNK_SIZE}, Overlap: {CHUNK_OVERLAP}")
     print(f"BM25 Weight: {BM25_WEIGHT}, Vector Weight: {VECTOR_WEIGHT}")
+

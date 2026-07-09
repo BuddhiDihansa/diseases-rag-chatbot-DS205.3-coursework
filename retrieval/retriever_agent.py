@@ -12,6 +12,7 @@ from typing import List, Dict, Any
 from retrieval.embedding_service import EmbeddingService
 from retrieval.vector_store import VectorStore
 from retrieval.hybrid_search import HybridSearch
+from retrieval.reranker import CrossEncoderReranker
 
 
 class RetrieverAgent:
@@ -28,11 +29,19 @@ class RetrieverAgent:
     def __init__(self, embedding_service: EmbeddingService = None,
                  vector_store: VectorStore = None,
                  hybrid_search: HybridSearch = None,
-                 bm25_data_path: str = "data/bm25_data.pkl"):
+                 bm25_data_path: str = "data/bm25_data.pkl",
+                 use_reranker: bool = True):
         """
         Dependency Injection: all dependencies passed in via constructor.
         This makes the agent easy to test (can inject mock/fake objects)
         and easy to swap implementations later.
+
+        use_reranker: when True (default), builds a CrossEncoderReranker
+        and wires it into HybridSearch for a higher-precision second pass
+        (see reranker.py for why). Set to False to skip loading the
+        cross-encoder model - useful for quick tests where retrieval
+        precision doesn't matter, since the cross-encoder model adds a
+        few seconds of load time on startup.
 
         On startup, this automatically loads the BM25 index from the
         file saved by build_database.py, so you don't need to manually
@@ -40,16 +49,34 @@ class RetrieverAgent:
         """
         self.embedding_service = embedding_service or EmbeddingService()
         self.vector_store = vector_store or VectorStore()
+
+        reranker = None
+        if use_reranker and hybrid_search is None:
+            try:
+                reranker = CrossEncoderReranker()
+            except Exception as e:
+                # Fail gracefully: if the cross-encoder model can't be
+                # downloaded/loaded (e.g. no internet on first run), fall
+                # back to plain hybrid search instead of crashing the
+                # whole system over an optional accuracy boost.
+                print(f"[RetrieverAgent] WARNING: Could not load reranker ({e}). "
+                      f"Continuing without re-ranking.")
+                reranker = None
+
         self.hybrid_search = hybrid_search or HybridSearch(
             vector_store=self.vector_store,
-            embedding_service=self.embedding_service
+            embedding_service=self.embedding_service,
+            reranker=reranker
         )
 
         # auto-load BM25 index if build_database.py has already been run
         if os.path.exists(bm25_data_path):
             with open(bm25_data_path, "rb") as f:
                 bm25_data = pickle.load(f)
-            self.hybrid_search.build_bm25_index(bm25_data["chunk_ids"], bm25_data["texts"])
+            # metadatas key may be missing in older pickles built before this
+            # traceability update - fall back gracefully instead of crashing.
+            metadatas = bm25_data.get("metadatas")
+            self.hybrid_search.build_bm25_index(bm25_data["chunk_ids"], bm25_data["texts"], metadatas)
             print(f"[RetrieverAgent] Loaded BM25 index with {len(bm25_data['texts'])} chunks.")
         else:
             print("[RetrieverAgent] WARNING: No BM25 data found. Run build_database.py first.")
@@ -67,7 +94,8 @@ class RetrieverAgent:
 
         print(f"[RetrieverAgent] Retrieved {len(results)} chunks:")
         for r in results:
-            print(f"  - {r['id']} (score: {r['score']:.3f})")
+            citation = self._format_citation(r.get("metadata", {}))
+            print(f"  - {r['id']} (score: {r['score']:.3f}) [{citation}]")
 
         return results
 
@@ -75,10 +103,25 @@ class RetrieverAgent:
         """
         Convenience method: returns retrieved chunks as a single
         combined text block, ready to feed into the LLM prompt.
+
+        Each chunk is prefixed with a [Source: file.pdf, page N] tag so
+        the LLM (and anyone reading the trace) can see exactly which
+        document/page each piece of context came from - this is the
+        "Traceability" requirement from the assessment brief.
         """
         results = self.retrieve(query, top_k=top_k)
-        context = "\n\n".join([r["text"] for r in results])
-        return context
+        context_blocks = []
+        for r in results:
+            citation = self._format_citation(r.get("metadata", {}))
+            context_blocks.append(f"[Source: {citation}]\n{r['text']}")
+        return "\n\n".join(context_blocks)
+
+    @staticmethod
+    def _format_citation(metadata: Dict[str, Any]) -> str:
+        """Builds a human-readable 'file.pdf, page 3' citation string from chunk metadata."""
+        source = metadata.get("source_document", "unknown source")
+        page = metadata.get("page_number")
+        return f"{source}, page {page}" if page else source
 
 
 # Example usage (for testing this file individually)

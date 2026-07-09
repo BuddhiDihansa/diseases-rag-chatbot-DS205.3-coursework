@@ -6,14 +6,19 @@ Purpose: The orchestrator. Connects all agents into a single flow.
 This is what main.py calls - it hides the complexity of the
 multi-agent chain behind one simple method: run(user_query).
 
-Full flow:
-User Query -> SymptomAgent -> RetrieverAgent -> ReasoningAgent -> VerificationAgent -> Final Answer
+Full flow (with self-correction):
+User Query -> SymptomAgent -> RetrieverAgent -> ReasoningAgent -> VerificationAgent
+                                                       ^                  |
+                                                       |__ retry w/ ______|
+                                                           feedback if
+                                                           not faithful
 
-FIXED VERSION: previously the verification result was printed but never
-acted on - a "No" or "Partially" verdict looked identical to a "Yes" to
-the end user. This version checks final_output["needs_review"] (set by
-the fixed VerificationAgent) and prints a clear warning block when the
-answer could not be fully verified against the retrieved context.
+This is the "Agentic Loop" the assessment brief asks for: the pipeline
+isn't a single one-way pass. If VerificationAgent finds the answer
+isn't fully supported by the retrieved context, the pipeline retries
+ReasoningAgent with explicit feedback about what was wrong (up to
+max_reflection_attempts times) before falling back to surfacing a
+clearly-labelled "needs review" answer to the user.
 """
 
 from agents.symptom_agent import SymptomAgent
@@ -21,6 +26,9 @@ from agents.reasoning_agent import ReasoningAgent
 from agents.verification_agent import VerificationAgent
 from retrieval.retriever_agent import RetrieverAgent
 from services.llm_client import LLMClient
+from utils.logger import get_logger
+
+logger = get_logger("MedicalAIPipeline")
 
 
 class MedicalAIPipeline:
@@ -38,7 +46,14 @@ class MedicalAIPipeline:
                  symptom_agent: SymptomAgent = None,
                  retriever_agent: RetrieverAgent = None,
                  reasoning_agent: ReasoningAgent = None,
-                 verification_agent: VerificationAgent = None):
+                 verification_agent: VerificationAgent = None,
+                 max_reflection_attempts: int = 2):
+        """
+        max_reflection_attempts: how many times ReasoningAgent will retry
+        generating an answer if VerificationAgent flags it as not fully
+        faithful to the retrieved context. Set to 1 to disable the
+        reflection loop and keep the old linear (single-pass) behavior.
+        """
 
         # shared LLM client so we don't create multiple connections
         shared_llm_client = LLMClient()
@@ -47,14 +62,17 @@ class MedicalAIPipeline:
         self.retriever_agent = retriever_agent or RetrieverAgent()
         self.reasoning_agent = reasoning_agent or ReasoningAgent(llm_client=shared_llm_client)
         self.verification_agent = verification_agent or VerificationAgent(llm_client=shared_llm_client)
+        self.max_reflection_attempts = max_reflection_attempts
 
     def run(self, user_query: str, top_k: int = 5) -> dict:
         """
-        Runs the full pipeline end-to-end for a single user query.
+        Runs the full pipeline end-to-end for a single user query,
+        with a self-correction (reflection) loop around Reasoning +
+        Verification.
 
         Returns a dict with everything - useful for the demo video,
         since you can print each stage separately to show the
-        "Ingestion -> Retrieval -> Synthesis -> Evaluation" trace.
+        "Ingestion -> Retrieval -> Synthesis -> Verification -> Reflection" trace.
         """
         print("=" * 60)
         print(f"USER QUERY: {user_query}")
@@ -68,16 +86,46 @@ class MedicalAIPipeline:
         print("\n--- STEP 2: Retrieval ---")
         retrieved_context = self.retriever_agent.get_context_text(structured_symptoms, top_k=top_k)
 
-        # Step 3: Reasoning Agent - generate grounded answer
-        print("\n--- STEP 3: Reasoning / Answer Generation ---")
-        reasoning_output = self.reasoning_agent.run(
-            symptoms=structured_symptoms,
-            retrieved_context=retrieved_context
-        )
+        # Steps 3+4: Reasoning + Verification, with a reflection loop -
+        # this is the "agentic" part: the pipeline reacts to its own
+        # verification result instead of blindly returning attempt #1.
+        feedback = None
+        final_output = None
 
-        # Step 4: Verification Agent - check for hallucinations
-        print("\n--- STEP 4: Verification ---")
-        final_output = self.verification_agent.run(reasoning_output)
+        for attempt in range(1, self.max_reflection_attempts + 1):
+            print(f"\n--- STEP 3: Reasoning / Answer Generation (attempt {attempt}) ---")
+            reasoning_output = self.reasoning_agent.run(
+                symptoms=structured_symptoms,
+                retrieved_context=retrieved_context,
+                feedback=feedback
+            )
+
+            print(f"\n--- STEP 4: Verification (attempt {attempt}) ---")
+            final_output = self.verification_agent.run(reasoning_output)
+
+            if not final_output.get("needs_review"):
+                logger.info(f"Answer verified as faithful on attempt {attempt}.")
+                break
+
+            verification = final_output["verification"]
+            logger.warning(
+                f"Attempt {attempt} flagged as not fully faithful "
+                f"(faithful={verification['faithful']}). "
+                f"Unsupported claims: {verification['unsupported_claims']}"
+            )
+
+            if attempt < self.max_reflection_attempts:
+                # Build feedback for the next attempt from exactly what
+                # VerificationAgent said was wrong - this is what turns
+                # the retry into a genuine reflection step rather than
+                # just re-rolling the same prompt and hoping for a
+                # different answer.
+                unsupported = verification.get("unsupported_claims") or []
+                feedback = (
+                    f"the answer was judged '{verification['faithful']}' faithful, "
+                    f"with these unsupported claims: {', '.join(unsupported) if unsupported else 'unspecified'}"
+                )
+                print(f"\n[REFLECTION] Retrying with feedback: {feedback}")
 
         print("\n" + "=" * 60)
         print("FINAL ANSWER:")
@@ -85,7 +133,8 @@ class MedicalAIPipeline:
 
         verification = final_output["verification"]
         if final_output.get("needs_review"):
-            print("\n[WARNING] This answer could not be fully verified against the source documents.")
+            print(f"\n[WARNING] This answer could not be fully verified against the source "
+                  f"documents after {self.max_reflection_attempts} attempt(s).")
             print(f"  Faithfulness: {verification['faithful']}")
             if verification["unsupported_claims"]:
                 print("  Unsupported claims:")
