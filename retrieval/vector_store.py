@@ -98,9 +98,16 @@ class VectorStore:
         Query the vector store for the most similar chunks.
         Returns results in a ChromaDB-like format so the rest of the
         codebase (hybrid_search.py) doesn't need to change.
+
+        FIXED: this used to omit "metadatas" from the returned dict
+        entirely, which meant hybrid_search.py's vector_search() (which
+        reads results.get("metadatas", [[]])[0]) silently got an empty
+        list every time and every vector-search hit lost its source
+        citation (showing up as "unknown source" downstream). Now the
+        metadata stored in id_map at add_chunks() time is returned too.
         """
         if self.index.ntotal == 0:
-            return {"ids": [[]], "documents": [[]], "distances": [[]]}
+            return {"ids": [[]], "documents": [[]], "distances": [[]], "metadatas": [[]]}
 
         query_vector = np.array([query_embedding], dtype="float32")
         faiss.normalize_L2(query_vector)
@@ -108,7 +115,7 @@ class VectorStore:
         top_k = min(top_k, self.index.ntotal)
         scores, indices = self.index.search(query_vector, top_k)
 
-        ids, documents, distances = [], [], []
+        ids, documents, distances, metadatas = [], [], [], []
         for score, idx in zip(scores[0], indices[0]):
             if idx == -1:
                 continue
@@ -116,11 +123,13 @@ class VectorStore:
             ids.append(chunk_data["id"])
             documents.append(chunk_data["text"])
             distances.append(1 - float(score))  # convert similarity to "distance"
+            metadatas.append(chunk_data.get("metadata", {}))
 
         return {
             "ids": [ids],
             "documents": [documents],
-            "distances": [distances]
+            "distances": [distances],
+            "metadatas": [metadatas]
         }
 
     def count(self) -> int:

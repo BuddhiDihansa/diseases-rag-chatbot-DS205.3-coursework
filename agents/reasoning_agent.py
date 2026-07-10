@@ -44,13 +44,11 @@ class ReasoningAgent(BaseAgent):
         Returns:
             dict
         """
-
         self.log("Generating grounded answer from retrieved context...")
 
         # Safety check
         if not retrieved_context or not retrieved_context.strip():
             self.log("No retrieved context available.")
-
             return {
                 "symptoms_input": symptoms,
                 "retrieved_context": "",
@@ -59,7 +57,6 @@ class ReasoningAgent(BaseAgent):
             }
 
         feedback_block = ""
-
         if feedback:
             feedback_block = f"""
 IMPORTANT:
@@ -85,9 +82,7 @@ Rules:
 - Do NOT invent medications.
 - Do NOT invent treatments.
 - If the retrieved context is insufficient, clearly say so.
-
 {feedback_block}
-
 Retrieved Context:
 {retrieved_context}
 
@@ -111,13 +106,9 @@ Things to Avoid:
 
         try:
             raw_response = self.llm_client.generate(prompt)
-
             self.log("Answer generated successfully.")
-
         except Exception as e:
-
             self.log(f"LLM generation failed: {e}")
-
             return {
                 "symptoms_input": symptoms,
                 "retrieved_context": retrieved_context,
@@ -135,9 +126,7 @@ Things to Avoid:
 # --------------------------------------------------------
 # Test this file independently
 # --------------------------------------------------------
-
 if __name__ == "__main__":
-
     agent = ReasoningAgent()
 
     fake_context = """
@@ -147,6 +136,7 @@ headache,
 joint pain,
 muscle pain,
 and skin rash.
+
 Patients should stay hydrated and seek medical attention
 if warning signs develop.
 """
