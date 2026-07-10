@@ -40,7 +40,6 @@ class TextCleaner:
     def remove_headers_footers(self, text: str, known_headers: list = None) -> str:
         """
         Remove repeated headers/footers if you know what they look like.
-        Example: known_headers = ["WHO Fact Sheet", "Page"]
         """
         if not known_headers:
             return text
