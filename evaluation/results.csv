@@ -1,0 +1,131 @@
+question,expected_answer,system_answer,semantic_similarity,keyword_overlap,final_score_percent
+What are the symptoms of Dengue fever?,"High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash.","**Possible Condition:**
+Dengue fever
+
+**Confidence Note:**
+High – the symptom list (fever, headache, muscle and joint pain, rash, eye pain, nausea, vomiting, fatigue, and bleeding) closely matches the features described for dengue fever in the guidelines (high fever, retro‑orbital pain, myalgia, arthralgia, rash, haemorrhagic manifestations, and leucopenia/low platelet count).
+
+**Recommended Actions:**
+- Seek medical evaluation promptly to confirm dengue infection.  
+- Obtain a complete blood count to check for leucopenia (WBC < 10 × 10⁹/L) and thrombocytopenia (platelet < 150 × 10⁹/L).  
+- Monitor for signs of bleeding (petechiae, purpura, gum or nasal bleeding, gastrointestinal bleeding, haematuria, menorrhagia).  
+- Maintain adequate hydration and plan for fluid management if the patient enters the critical phase, as indicated by the guidelines.  
+- Provide supportive care tailored to the patient's clinical status.
+
+**Things to Avoid:**
+- Non‑steroidal anti‑inflammatory drugs (NSAIDs) and aspirin, which can increase bleeding risk.",0.577,0.625,59.1%
+What is diabetes?,"A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels.","Possible Condition:  
+Not enough information to determine a specific condition.  
+
+Confidence Note:  
+The retrieved context does not contain patient symptoms or any diagnostic information.  
+
+Recommended Actions:  
+- None that can be derived from the provided context.  
+
+Things to Avoid:  
+- None that can be identified from the provided context.",0.268,0.308,28.0%
+What are the symptoms of asthma?,"Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning.","**Possible Condition:**  
+Asthma
+
+**Confidence Note:**  
+The patient’s symptoms—wheezing, shortness of breath, chest tightness, coughing, and difficulty breathing—match the pattern of typical variable respiratory symptoms described in the GINA report as characteristic of asthma. No other specific evidence from the retrieved context was provided to indicate an alternative diagnosis.
+
+**Recommended Actions:**
+- Document the evidence supporting an asthma diagnosis (history of typical variable respiratory symptoms, triggers, nocturnal pattern, etc.) when the patient first presents, as advised in the GINA report.
+- Monitor symptoms over time to assess whether they improve spontaneously or with standard asthma therapy.
+
+**Things to Avoid:**
+- Assuming the symptoms are due to asthma without documenting the supporting evidence.
+- Ignoring the possibility of other acute or chronic conditions that can present with similar respiratory symptoms, as noted in the GINA report.",0.534,0.571,54.5%
+What should someone with dengue avoid?,Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration.,"Possible Condition:  
+Not enough information to determine a possible condition.
+
+Confidence Note:  
+No patient symptoms or medical history were provided in the retrieved context, so a specific diagnosis cannot be supported.
+
+Recommended Actions:  
+None – further patient information is required to provide guidance.
+
+Things to Avoid:  
+None.",0.042,0.0,2.9%
+What are the common symptoms of typhoid fever?,"Sustained high fever, weakness, stomach pain, headache, and loss of appetite.","Possible Condition:  
+- Mild COVID‑19  
+- Uncomplicated influenza  
+
+Confidence Note:  
+The patient’s symptoms (fever, cough, sore throat, headache, diarrhea, weakness) overlap with the signs and symptoms described for mild COVID‑19 and uncomplicated influenza in the retrieved sources. No information in the context definitively excludes either condition.  
+
+Recommended Actions:  
+- Rest and adequate hydration.  
+- Monitor for any worsening of symptoms such as development of shortness of breath, dyspnea, or abnormal chest imaging.  
+- If oxygen saturation falls below 94 % on room air, seek medical care.  
+- No routine imaging or specific laboratory evaluations are indicated for otherwise healthy patients with mild illness per the COVID‑19 guidelines.  
+
+Things to Avoid:  
+- Unnecessary imaging or laboratory tests in the absence of severe or worsening symptoms.",0.54,0.273,46.0%
+How is hypertension managed?,"Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor.","Possible Condition:
+Insufficient context to determine a specific medical condition.
+
+Confidence Note:
+The provided sources do not contain patient symptom details or diagnostic information necessary to identify a condition.
+
+Recommended Actions:
+- Gather detailed symptom information from the patient.
+- Consult a qualified healthcare professional for an individualized assessment.
+- Review relevant diagnostic guidelines (e.g., for food allergies, influenza, anemia) once symptoms are documented.
+
+Things to Avoid:
+- Making assumptions or diagnoses without sufficient patient data.",0.199,0.1,17.0%
+What are the symptoms of a common cold vs COVID-19?,"Both can cause cough, sore throat, and fatigue, but COVID-19 more commonly causes loss of taste/smell and can lead to more severe respiratory symptoms.","Possible Condition:  
+Moderate COVID‑19 or Severe/complicated Influenza  
+
+Confidence Note:  
+Both moderate COVID‑19 and severe or complicated influenza can present with fever, cough, sore throat, runny nose, nasal congestion, sneezing, headache, fatigue, muscle aches, loss of taste or smell, and shortness of breath. The presence of shortness of breath and loss of taste/smell makes moderate COVID‑19 a plausible diagnosis, but influenza severe or complicated also fits. A confirmed diagnosis would require testing.
+
+Recommended Actions:  
+- Monitor oxygen saturation with a pulse oximeter; maintain SpO₂ ≥ 94 %.  
+- Rest and stay hydrated.  
+- Use over‑the‑counter analgesics/antipyretics for fever and aches as needed.  
+- Avoid unnecessary imaging or laboratory tests unless clinical status worsens.  
+- Seek medical care promptly if shortness of breath worsens or SpO₂ drops below 94 %.
+
+Things to Avoid:  
+- Self‑prescribing antibiotics.  
+- Unverified or unproven treatments and supplements.  
+- Delaying medical care if breathing becomes more difficult.",0.617,0.667,63.2%
+What are the warning signs of a heart attack?,"Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness.","Possible Condition: Myocardial ischemia (heart disease)
+
+Confidence Note: The patient's symptoms—chest pain with radiation to the arm/shoulder/jaw/neck/back, shortness of breath, sweating, nausea, lightheadedness, and fatigue—align closely with the typical presentation of heart disease as described in the retrieved context. The pattern of pain, associated symptoms, and lack of mention of stroke or other neurological signs make myocardial ischemia the most likely diagnosis.
+
+Recommended Actions:
+- Rest and avoid physical exertion.
+- Seek emergency medical care promptly; call emergency services if symptoms are severe or worsening.
+- Monitor for relief of symptoms within a few minutes, which may indicate a non‑critical episode.
+- If symptoms are not relieved by rest or do not improve, ensure immediate medical evaluation.
+
+Things to Avoid:
+- Delaying medical attention or assuming the pain will resolve on its own.
+- Ignoring or dismissing associated symptoms such as shortness of breath, sweating, or nausea.",0.712,0.529,65.7%
+What is the recommended treatment for mild asthma attacks?,"Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers.","Possible Condition:
+- Unable to determine a specific condition based on the information provided.
+
+Confidence Note:
+- Low; no patient symptom details were supplied, so a diagnosis cannot be supported by the retrieved context.
+
+Recommended Actions:
+- None, as no specific condition has been identified.
+
+Things to Avoid:
+- Making a diagnosis or recommending treatments without detailed symptom information.",0.21,0.154,19.3%
+What precautions should a diabetic patient take with their diet?,"Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly.","Possible Condition:
+Unable to determine due to lack of symptom information.
+
+Confidence Note:
+No confidence can be assigned because no patient symptom details were provided in the retrieved context.
+
+Recommended Actions:
+- Ask the patient to provide a detailed description of their symptoms, medical history, and any relevant test results.
+
+Things to Avoid:
+- Speculating on a specific medical condition without sufficient information.",0.124,0.111,12.0%
