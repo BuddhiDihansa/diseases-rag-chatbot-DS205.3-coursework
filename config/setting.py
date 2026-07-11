@@ -81,7 +81,3 @@ if __name__ == "__main__":
     print(f"Embedding Model: {EMBEDDING_MODEL}")
     print(f"Chunk Size: {CHUNK_SIZE}, Overlap: {CHUNK_OVERLAP}")
     print(f"BM25 Weight: {BM25_WEIGHT}, Vector Weight: {VECTOR_WEIGHT}")
-<<<<<<< HEAD
-
-=======
->>>>>>> Randini
