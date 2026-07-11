@@ -46,6 +46,24 @@ class VerificationAgent(BaseAgent):
 
         self.log("Verifying generated answer against retrieved context...")
 
+        # If ReasoningAgent's LLM call itself failed (network error, rate
+        # limit exhausted after retries, etc.), generated_answer is an
+        # error string, not a real medical answer. Asking the LLM to
+        # "check whether every claim is supported" on a message with no
+        # medical claims in it tends to come back "faithful: Yes" (there's
+        # nothing to contradict), which would then get shown to the user
+        # as a verified, trustworthy answer - exactly backwards. Skip the
+        # verification call entirely and fail closed instead.
+        if reasoning_output.get("generation_failed"):
+            self.log("Skipping verification - answer generation failed upstream.")
+            verification = {
+                "faithful": "No",
+                "unsupported_claims": ["Answer generation failed - no response was produced to verify."]
+            }
+            reasoning_output["verification"] = verification
+            reasoning_output["needs_review"] = True
+            return reasoning_output
+
         prompt = f"""You are a strict medical fact checker.
 
 Use ONLY the context below. Check whether every claim in the ANSWER is

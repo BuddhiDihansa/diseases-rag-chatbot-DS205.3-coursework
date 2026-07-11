@@ -9,11 +9,17 @@ and outputs a results table. This is exactly what the report's
 running in the demo video.
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+# Without this, LLM_API_KEY (and any other .env values) are never loaded
+# into the environment when this file is run as its own entry point
+# (`python -m evaluation.run_evaluation`) - main.py loads .env itself,
+# but this script is a separate entry point and needs to do the same.
+
 import json
 import csv
 from evaluation.evaluator import Evaluator
 from services.pipeline import MedicalAIPipeline
-
 
 def load_ground_truth(filepath: str = "evaluation/ground_truth.json") -> list:
     """Load the ground truth Q&A pairs from JSON."""

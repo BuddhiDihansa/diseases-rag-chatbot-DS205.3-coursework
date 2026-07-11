@@ -53,7 +53,8 @@ class ReasoningAgent(BaseAgent):
                 "symptoms_input": symptoms,
                 "retrieved_context": "",
                 "generated_answer":
-                    "No relevant medical information was retrieved from the knowledge base."
+                    "No relevant medical information was retrieved from the knowledge base.",
+                "generation_failed": False
             }
 
         feedback_block = ""
@@ -113,13 +114,22 @@ Things to Avoid:
                 "symptoms_input": symptoms,
                 "retrieved_context": retrieved_context,
                 "generated_answer":
-                    f"Error: Could not generate response. ({e})"
+                    f"Error: Could not generate response. ({e})",
+                # Explicit flag so downstream steps (VerificationAgent,
+                # the pipeline) can tell "the LLM call itself failed"
+                # apart from "the LLM generated a real answer" - without
+                # this, an error string with no medical claims in it gets
+                # judged 'faithful: Yes' by the verifier (nothing to
+                # contradict) and gets shown to the user as a verified,
+                # trustworthy answer, which it very much is not.
+                "generation_failed": True
             }
 
         return {
             "symptoms_input": symptoms,
             "retrieved_context": retrieved_context,
-            "generated_answer": raw_response
+            "generated_answer": raw_response,
+            "generation_failed": False
         }
 
 

@@ -9,10 +9,22 @@ with LLaMA models.
 
 If you switch LLM providers later, you only change this one file,
 not every agent.
+
+Reliability: includes retry-with-backoff, since a real deployed system
+can't afford to crash the whole pipeline just because one API call hit
+a transient network blip or a rate limit. After all retries are
+exhausted, raises LLMGenerationError instead of silently returning a
+placeholder string - callers (agents) should know generation actually
+failed rather than mistake an error message for a real answer.
 """
 
 import os
+import time
 import requests  # pip install requests
+from utils.logger import get_logger
+from utils.exceptions import LLMGenerationError, ConfigurationError
+
+logger = get_logger("LLMClient")
 
 
 class LLMClient:
@@ -21,40 +33,91 @@ class LLMClient:
     model are configurable, not hardcoded.
     """
 
-    def __init__(self, api_key: str = None, model: str = None):
+    def __init__(self, api_key: str = None, model: str = None,
+                 max_retries: int = 5, backoff_seconds: float = 3.0):
+        """
+        max_retries: how many times to retry a failed API call before
+        giving up and raising LLMGenerationError.
+        backoff_seconds: base delay between retries, doubled each time
+        (exponential backoff) - e.g. 3s, 6s, 12s - so a rate-limited API
+        gets progressively more breathing room instead of being hammered
+        with identical requests immediately after failing.
+        """
         self.api_key = api_key or os.getenv("LLM_API_KEY")
         self.model = model or os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
+        self.max_retries = max_retries
+        self.backoff_seconds = backoff_seconds
 
         if not self.api_key:
-            print("WARNING: No API key found. Set LLM_API_KEY in your .env file.")
+            # Fail fast with a clear, specific exception instead of a
+            # generic warning that's easy to miss during a live demo.
+            raise ConfigurationError(
+                "No API key found. Set LLM_API_KEY in your .env file "
+                "(copy .env.example to .env and fill it in)."
+            )
 
     def generate(self, prompt: str, max_tokens: int = 1500) -> str:
         """
         Send a prompt to the Groq LLM and return the text response.
         Groq uses the same request/response format as OpenAI's API.
-        """
-        try:
-            response = requests.post(
-                self.base_url,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": self.model,
-                    "max_tokens": max_tokens,
-                    "messages": [{"role": "user", "content": prompt}]
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            print(data)
-            return data["choices"][0]["message"]["content"]
 
-        except Exception as e:
-            print(f"LLM API error: {e}")
-            return "Error: Could not generate response."
+        Retries transient failures (network errors, timeouts, 429/5xx
+        responses) up to max_retries times with exponential backoff.
+        Raises LLMGenerationError if every attempt fails - callers must
+        NOT treat a returned string as a guaranteed success; if this
+        method returns at all, it succeeded, otherwise it raises.
+        """
+        last_error = None
+
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                response = requests.post(
+                    self.base_url,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": self.model,
+                        "max_tokens": max_tokens,
+                        "messages": [{"role": "user", "content": prompt}]
+                    },
+                    timeout=30
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                last_error = e
+                logger.warning(f"Attempt {attempt}/{self.max_retries} failed (network issue): {e}")
+
+            except requests.exceptions.HTTPError as e:
+                last_error = e
+                status = e.response.status_code if e.response is not None else None
+                if status == 429 or (status is not None and status >= 500):
+                    # rate limit or server-side error - worth retrying
+                    logger.warning(f"Attempt {attempt}/{self.max_retries} failed (HTTP {status}): {e}")
+                else:
+                    # client error (e.g. 400 bad request, 401 invalid key) -
+                    # retrying won't help, fail immediately with a clear error
+                    logger.error(f"Non-retryable API error (HTTP {status}): {e}")
+                    raise LLMGenerationError(f"LLM API request failed (HTTP {status}): {e}") from e
+
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Attempt {attempt}/{self.max_retries} failed (unexpected error): {e}")
+
+            if attempt < self.max_retries:
+                delay = self.backoff_seconds * (2 ** (attempt - 1))
+                logger.info(f"Retrying in {delay:.1f}s...")
+                time.sleep(delay)
+
+        logger.error(f"All {self.max_retries} attempts failed. Last error: {last_error}")
+        raise LLMGenerationError(
+            f"LLM API call failed after {self.max_retries} attempts: {last_error}"
+        )
 
 
 # Example usage (for testing this file individually)
