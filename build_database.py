@@ -75,11 +75,15 @@ def build_database():
     print("=" * 60)
 
     hybrid_search = HybridSearch(vector_store=vector_store, embedding_service=embedding_service)
-    hybrid_search.build_bm25_index(chunk_ids, texts)
+    hybrid_search.build_bm25_index(chunk_ids, texts, metadatas)
 
-    # Save the BM25 index data so main.py can load it without rebuilding
+    # Save the BM25 index data so main.py can load it without rebuilding.
+    # FIXED: "metadatas" is now included - without it, BM25-only matches
+    # (i.e. chunks found by keyword search but not by vector search) lost
+    # their source_document citation and showed up as "unknown source" in
+    # the retrieved context trace, weakening the Traceability requirement.
     with open("data/bm25_data.pkl", "wb") as f:
-        pickle.dump({"chunk_ids": chunk_ids, "texts": texts}, f)
+        pickle.dump({"chunk_ids": chunk_ids, "texts": texts, "metadatas": metadatas}, f)
 
     print("\n" + "=" * 60)
     print(f"DATABASE BUILD COMPLETE - {len(all_chunks)} chunks stored and indexed")

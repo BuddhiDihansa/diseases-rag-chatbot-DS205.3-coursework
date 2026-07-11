@@ -19,14 +19,12 @@ from dotenv import load_dotenv  # pip install python-dotenv
 load_dotenv()
 
 
-# ---------- Chunking Settings ----------
-
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
-
 # ---------- LLM Settings ----------
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-4-6")
+# Default matches services/llm_client.py, which calls the Groq API -
+# keep these two in sync so the Viva demo can't accidentally use a
+# different model than what's documented here.
+LLM_MODEL = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
 LLM_MAX_TOKENS = 500
 
 
