@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 """
 settings.py
 Shared configuration for the entire project.
@@ -13,19 +11,12 @@ Values are loaded from environment variables (.env file) where sensitive,
 with sensible defaults for everything else.
 """
 
->>>>>>> develop
 import os
 from dotenv import load_dotenv  # pip install python-dotenv
 
 # Load variables from .env file into environment
 load_dotenv()
 
-<<<<<<< HEAD
-# ---------- Chunking Settings ----------
-
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
-=======
 
 # ---------- LLM Settings ----------
 LLM_API_KEY = os.getenv("LLM_API_KEY")
@@ -86,4 +77,3 @@ if __name__ == "__main__":
     print(f"Embedding Model: {EMBEDDING_MODEL}")
     print(f"Chunk Size: {CHUNK_SIZE}, Overlap: {CHUNK_OVERLAP}")
     print(f"BM25 Weight: {BM25_WEIGHT}, Vector Weight: {VECTOR_WEIGHT}")
->>>>>>> develop
