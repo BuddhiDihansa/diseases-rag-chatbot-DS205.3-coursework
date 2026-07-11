@@ -36,9 +36,12 @@ def run_full_evaluation():
 
     qa_results = []
 
+    import time
+
     for pair in qa_pairs:
         print(f"\nRunning question: {pair['question']}")
         pipeline_output = pipeline.run(pair["question"])
+        time.sleep(3)
 
         qa_results.append({
             "question": pair["question"],

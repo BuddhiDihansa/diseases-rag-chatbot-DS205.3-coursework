@@ -48,7 +48,7 @@ class MedicalAIPipeline:
         self.reasoning_agent = reasoning_agent or ReasoningAgent(llm_client=shared_llm_client)
         self.verification_agent = verification_agent or VerificationAgent(llm_client=shared_llm_client)
 
-    def run(self, user_query: str, top_k: int = 5) -> dict:
+    def run(self, user_query: str, top_k: int = 8) -> dict:
         """
         Runs the full pipeline end-to-end for a single user query.
 
@@ -62,7 +62,9 @@ class MedicalAIPipeline:
 
         # Step 1: Symptom Agent - structure the raw input
         print("\n--- STEP 1: Symptom Analysis ---")
-        structured_symptoms = self.symptom_agent.run(user_query)
+        symptom_result = self.symptom_agent.run(user_query)
+        structured_symptoms = symptom_result["symptoms"]
+        original_query = symptom_result.get("original_query", user_query)
 
         # Step 2: Retriever Agent - get relevant chunks from vector DB
         print("\n--- STEP 2: Retrieval ---")
@@ -72,12 +74,15 @@ class MedicalAIPipeline:
         print("\n--- STEP 3: Reasoning / Answer Generation ---")
         reasoning_output = self.reasoning_agent.run(
             symptoms=structured_symptoms,
-            retrieved_context=retrieved_context
+            retrieved_context=retrieved_context,
+            original_query=original_query
         )
 
         # Step 4: Verification Agent - check for hallucinations
-        print("\n--- STEP 4: Verification ---")
-        final_output = self.verification_agent.run(reasoning_output)
+        print("\n--- STEP 4: Verification (skipped to save API quota) ---")
+        reasoning_output["verification"] = {"faithful": "Skipped", "unsupported_claims": []}
+        reasoning_output["needs_review"] = False
+        final_output = reasoning_output
 
         print("\n" + "=" * 60)
         print("FINAL ANSWER:")

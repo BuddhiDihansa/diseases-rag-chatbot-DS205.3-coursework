@@ -6,13 +6,8 @@ Purpose: Final agent in the pipeline. Checks whether the generated
 answer is actually supported by the retrieved context (hallucination
 check), and gives a confidence/faithfulness score.
 
-FIXED VERSION: the original prompt asked the LLM to return ONLY JSON,
-then also asked it to respond in a different plain-text format
-("Faithful: <Yes/No>") in the same prompt - a contradiction that could
-make the model output either format unpredictably. This version asks
-for JSON only, and the code now actually parses that JSON and uses it
-(the original just stored the raw string and never read it), so the
-pipeline can act on the verdict instead of only printing it.
+FIXED: Now handles "I don't know" responses properly and doesn't
+flag them as hallucinations.
 """
 
 import json
@@ -43,8 +38,31 @@ class VerificationAgent(BaseAgent):
         """
         generated_answer = reasoning_output["generated_answer"]
         context = reasoning_output["retrieved_context"]
+        is_confident = reasoning_output.get("is_confident", True)
 
         self.log("Verifying generated answer against retrieved context...")
+
+        # If the answer is an "I don't know" response, mark as faithful
+        if not is_confident or "I don't have enough information" in generated_answer:
+            self.log("Answer is an 'I don't know' response - marking as faithful.")
+            reasoning_output["verification"] = {
+                "faithful": "Yes",
+                "unsupported_claims": [],
+                "note": "Answer appropriately indicates lack of information."
+            }
+            reasoning_output["needs_review"] = False
+            return reasoning_output
+
+        # If context is empty or very short
+        if not context or len(context.strip()) < 50:
+            self.log("WARNING: Context is empty or too short.")
+            reasoning_output["verification"] = {
+                "faithful": "No",
+                "unsupported_claims": ["Context is empty or insufficient for verification."],
+                "note": "No source documents available to verify the answer."
+            }
+            reasoning_output["needs_review"] = True
+            return reasoning_output
 
         prompt = f"""You are a strict medical fact checker.
 
@@ -67,7 +85,7 @@ Rules:
 - Do not include any explanation, markdown, or text outside the JSON object
 """
 
-        raw_result = self.llm_client.generate(prompt)
+        raw_result = self.llm_client.generate(prompt, max_tokens=150)
         verification = self._parse_verification(raw_result)
 
         self.log(f"Verification result: {verification}")
@@ -80,12 +98,6 @@ Rules:
     def _parse_verification(self, raw_result: str) -> dict:
         """
         Safely parse the LLM's JSON response into a dict.
-
-        LLMs sometimes wrap JSON in markdown code fences (```json ... ```)
-        even when told not to, so we strip those first. If parsing still
-        fails for any reason, we fall back to "Partially" (rather than
-        silently assuming "Yes") so an unparseable response gets flagged
-        for human review instead of passing through unnoticed.
         """
         if not raw_result:
             return {"faithful": "Partially", "unsupported_claims": ["Empty verification response"]}
@@ -120,7 +132,8 @@ if __name__ == "__main__":
     agent = VerificationAgent()
     fake_reasoning_output = {
         "retrieved_context": "Dengue fever symptoms include high fever, headache, joint pain.",
-        "generated_answer": "Possible Condition: Dengue Fever\nRecommended: rest and fluids."
+        "generated_answer": "Possible Condition: Dengue Fever\nRecommended: rest and fluids.",
+        "is_confident": True
     }
     result = agent.run(fake_reasoning_output)
     print("\n--- Verification Result ---")

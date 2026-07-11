@@ -3,52 +3,102 @@
     {
       "id": "q1",
       "question": "What are the symptoms of Dengue fever?",
-      "expected_answer": "High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash."
+      "expected_answer": "An acute febrile illness lasting 2 to 7 days with headache, retro-orbital pain, muscle and joint pain, and skin rash. May be accompanied by bleeding manifestations such as petechiae and a positive tourniquet test."
     },
     {
       "id": "q2",
-      "question": "What is diabetes?",
-      "expected_answer": "A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels."
+      "question": "What should someone with dengue avoid?",
+      "expected_answer": "Aspirin and NSAIDs such as ibuprofen should be avoided, as they may cause gastritis, vomiting, acidosis, and platelet dysfunction."
     },
     {
       "id": "q3",
-      "question": "What are the symptoms of asthma?",
-      "expected_answer": "Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning."
+      "question": "What are the common symptoms of typhoid fever?",
+      "expected_answer": "Gradual onset of continuous fever up to 40 degrees Celsius, malaise, anorexia, lethargy, headache, and constipation or diarrhoea. Hepatomegaly and splenomegaly may be present."
     },
     {
       "id": "q4",
-      "question": "What should someone with dengue avoid?",
-      "expected_answer": "Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration."
+      "question": "What are the symptoms of malaria?",
+      "expected_answer": "An acute and chronic illness with paroxysms of fever, chills, sweats, fatigue, anaemia, and splenomegaly. Severe falciparum malaria can cause cerebral symptoms and hyperpyrexia."
     },
     {
       "id": "q5",
-      "question": "What are the common symptoms of typhoid fever?",
-      "expected_answer": "Sustained high fever, weakness, stomach pain, headache, and loss of appetite."
+      "question": "What are the symptoms of chikungunya?",
+      "expected_answer": "An acute self-limiting illness with abrupt onset of fever and severe joint pain, followed a few days later by an itching maculopapular rash on the trunk and limbs."
     },
     {
       "id": "q6",
-      "question": "How is hypertension managed?",
-      "expected_answer": "Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor."
+      "question": "What is the most common symptom of pulmonary tuberculosis?",
+      "expected_answer": "A persistent cough of two weeks or more, with or without expectoration, often accompanied by fever, night sweats, weight loss, and loss of appetite."
     },
     {
       "id": "q7",
-      "question": "What are the symptoms of a common cold vs COVID-19?",
-      "expected_answer": "Both can cause cough, sore throat, and fatigue, but COVID-19 more commonly causes loss of taste/smell and can lead to more severe respiratory symptoms."
+      "question": "How is hypertension managed non-pharmacologically?",
+      "expected_answer": "Reducing dietary sodium intake, adopting a diet rich in fruits and vegetables with low fat dairy, regular aerobic exercise, weight control, moderation of alcohol, and cessation of smoking."
     },
     {
       "id": "q8",
-      "question": "What are the warning signs of a heart attack?",
-      "expected_answer": "Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness."
+      "question": "What is the recommended treatment for migraine?",
+      "expected_answer": "Avoidance of triggers and lifestyle modification. For mild to moderate migraine, a combination of acetaminophen, aspirin, and caffeine can be used. If this fails, sumatriptan or zolmitriptan tablets can be used. For frequent attacks, preventive medication such as propranolol, sodium valproate, or topiramate may be considered."
     },
     {
       "id": "q9",
-      "question": "What is the recommended treatment for mild asthma attacks?",
-      "expected_answer": "Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers."
+      "question": "What are the warning signs of a heart attack (myocardial infarction)?",
+      "expected_answer": "Chest pain, breathlessness, perspiration, syncope, tachycardia or bradycardia, hypotension or hypertension, and sudden cardiac arrest, often with ECG changes showing ischemia or infarction."
     },
     {
       "id": "q10",
+      "question": "What is the treatment for status epilepticus?",
+      "expected_answer": "Status epilepticus refers to continuous seizures or repetitive seizures without recovery of consciousness lasting more than 15 to 30 minutes, and is treated following the generalized tonic clonic status epilepticus treatment algorithm."
+    },
+    {
+      "id": "q11",
+      "question": "What are the symptoms of tetanus?",
+      "expected_answer": "Generalized tetanus starts with trismus (lockjaw), followed by rigidity and violent, painful, generalized muscle spasms and seizures provoked by the slightest stimulation."
+    },
+    {
+      "id": "q12",
+      "question": "What are the symptoms of cholera?",
+      "expected_answer": "Sudden onset of painless, watery, voluminous diarrhoea described as 'rice-water' stool, often with vomiting. Severe cases can lead to rapid dehydration and hypovolemic shock."
+    },
+    {
+      "id": "q13",
+      "question": "What is the first aid approach for a snake bite?",
+      "expected_answer": "The RIGHT approach: Reassure the patient, Immobilize the bitten limb, Get to hospital, and Tell the doctor about symptoms. Do not apply a tourniquet, wash the bite site, or attempt to suck out venom."
+    },
+    {
+      "id": "q14",
+      "question": "What are the symptoms of scabies?",
+      "expected_answer": "Nocturnal itching with excoriated papules, papulovesicles, and burrows on the finger webs, wrists, axillary folds, breasts, and genitals."
+    },
+    {
+      "id": "q15",
+      "question": "What are the symptoms of chickenpox?",
+      "expected_answer": "A generalized pruritic vesicular rash preceded by two to three days of fever, chills, headache, and malaise, with polymorphic vesicular lesions centred over the trunk."
+    },
+    {
+      "id": "q16",
+      "question": "What is nephrotic syndrome?",
+      "expected_answer": "Nephrotic syndrome is defined as proteinuria of more than 3.5 grams per day in adults, associated with hypoalbuminemia, hyperlipidemia, and oedema."
+    },
+    {
+      "id": "q17",
+      "question": "What are the symptoms of anaphylaxis?",
+      "expected_answer": "A generalized hypersensitivity reaction with hypotension, peripheral circulatory collapse, and respiratory difficulty such as stridor and dyspnoea, often occurring within minutes of exposure to the triggering agent."
+    },
+    {
+      "id": "q18",
+      "question": "What is the recommended treatment for mild asthma attacks?",
+      "expected_answer": "Use of a fast-acting reliever inhaler such as salbutamol, along with avoidance of known triggers."
+    },
+    {
+      "id": "q19",
       "question": "What precautions should a diabetic patient take with their diet?",
-      "expected_answer": "Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly."
+      "expected_answer": "Follow a balanced calorie-controlled diet with regular timing of meals, limit refined sugar intake, and maintain regular physical exercise to help control blood glucose levels."
+    },
+    {
+      "id": "q20",
+      "question": "What is diabetic ketoacidosis (DKA)?",
+      "expected_answer": "An acute complication of diabetes involving hyperglycemia, ketosis with positive serum ketones, and metabolic acidosis with an increased anion gap, presenting with nausea, vomiting, abdominal pain, and altered sensorium."
     }
   ]
 }

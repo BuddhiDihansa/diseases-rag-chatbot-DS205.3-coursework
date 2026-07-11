@@ -12,6 +12,7 @@ calculates the faithfulness/accuracy of the system's responses.
 """
 
 from typing import List, Dict, Any
+import re
 from sentence_transformers import SentenceTransformer, util  # pip install sentence-transformers
 
 
@@ -24,26 +25,67 @@ class Evaluator:
     system for consistency (though this is a separate instance/purpose).
     """
 
+    # Section headers used by ReasoningAgent's output format. These are
+    # structural labels, not medical content, and must be stripped before
+    # scoring - otherwise they dilute semantic similarity against a short,
+    # plain-sentence expected_answer (this was previously causing
+    # near-zero/negative scores even on genuinely correct answers).
+    _HEADER_PATTERN = re.compile(
+        r"(Possible Condition:|Confidence Note:|Recommended Actions:|Things to Avoid:)",
+        re.IGNORECASE
+    )
+
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
+
+    def _clean_answer_text(self, text: str) -> str:
+        """
+        Strip structural formatting (section headers, bullet dashes,
+        extra whitespace) from the system's generated answer so that
+        scoring compares actual medical content, not document structure.
+        """
+        if not text:
+            return ""
+        cleaned = self._HEADER_PATTERN.sub("", text)
+        cleaned = re.sub(r"^-\s*", "", cleaned, flags=re.MULTILINE)  # bullet dashes
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
 
     def semantic_similarity_score(self, expected_answer: str, system_answer: str) -> float:
         """
         Compares expected vs system answer using cosine similarity
         of their embeddings. Returns a score between 0 and 1.
+
+        system_answer is cleaned of structural formatting first (see
+        _clean_answer_text) so the comparison reflects content
+        similarity, not the presence/absence of headers and bullets.
         """
-        embeddings = self.model.encode([expected_answer, system_answer], convert_to_tensor=True)
+        cleaned_system_answer = self._clean_answer_text(system_answer)
+        embeddings = self.model.encode([expected_answer, cleaned_system_answer], convert_to_tensor=True)
         similarity = util.cos_sim(embeddings[0], embeddings[1])
-        return float(similarity[0][0])
+        # Clip to [0, 1]: cosine similarity can technically go slightly
+        # negative for very dissimilar text, but a negative "accuracy"
+        # score is meaningless and confusing in a results table/report.
+        return max(0.0, float(similarity[0][0]))
 
     def keyword_overlap_score(self, expected_answer: str, system_answer: str) -> float:
         """
         Simple secondary metric: what fraction of key words from the
         expected answer appear in the system's answer. Useful as a
         sanity check alongside semantic similarity.
+
+        Punctuation is stripped before splitting so that e.g. "fever,"
+        and "fever" are counted as the same word - otherwise overlap
+        is undercounted just because of trailing commas/periods.
         """
-        expected_words = set(expected_answer.lower().split())
-        system_words = set(system_answer.lower().split())
+        cleaned_system_answer = self._clean_answer_text(system_answer)
+
+        def _tokenize(text: str) -> set:
+            text = re.sub(r"[^\w\s]", "", text.lower())
+            return set(text.split())
+
+        expected_words = _tokenize(expected_answer)
+        system_words = _tokenize(cleaned_system_answer)
 
         if not expected_words:
             return 0.0

@@ -10,6 +10,13 @@ so no C++ compiler is needed.
 
 This still satisfies the "Vector Persistence" requirement - the index
 and its metadata are saved to disk and reloaded between sessions.
+
+FIXED VERSION: query() now also returns "metadatas" alongside ids,
+documents, and distances. Previously the source_document metadata was
+stored in id_map but never surfaced through query(), so hybrid_search.py
+and retriever_agent.py had no way to tell the LLM which PDF/section a
+retrieved chunk came from. This broke the "Traceability" requirement -
+the system could not show which source supported which claim.
 """
 
 import os
@@ -97,10 +104,13 @@ class VectorStore:
         """
         Query the vector store for the most similar chunks.
         Returns results in a ChromaDB-like format so the rest of the
-        codebase (hybrid_search.py) doesn't need to change.
+        codebase (hybrid_search.py) doesn't need to change much.
+
+        Now includes "metadatas" so callers can trace each chunk back
+        to its source document.
         """
         if self.index.ntotal == 0:
-            return {"ids": [[]], "documents": [[]], "distances": [[]]}
+            return {"ids": [[]], "documents": [[]], "distances": [[]], "metadatas": [[]]}
 
         query_vector = np.array([query_embedding], dtype="float32")
         faiss.normalize_L2(query_vector)
@@ -108,7 +118,7 @@ class VectorStore:
         top_k = min(top_k, self.index.ntotal)
         scores, indices = self.index.search(query_vector, top_k)
 
-        ids, documents, distances = [], [], []
+        ids, documents, distances, metadatas = [], [], [], []
         for score, idx in zip(scores[0], indices[0]):
             if idx == -1:
                 continue
@@ -116,11 +126,13 @@ class VectorStore:
             ids.append(chunk_data["id"])
             documents.append(chunk_data["text"])
             distances.append(1 - float(score))  # convert similarity to "distance"
+            metadatas.append(chunk_data.get("metadata", {}))
 
         return {
             "ids": [ids],
             "documents": [documents],
-            "distances": [distances]
+            "distances": [distances],
+            "metadatas": [metadatas]
         }
 
     def count(self) -> int:

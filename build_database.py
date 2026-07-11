@@ -45,7 +45,7 @@ def build_database():
     print("STEP 3: Chunking text")
     print("=" * 60)
 
-    chunker = TextChunker(chunk_size=500, chunk_overlap=50)
+    chunker = TextChunker(chunk_size=900, chunk_overlap=200)
     all_chunks = chunker.chunk_multiple_documents(cleaned_documents)
 
     print(f"\nTotal chunks created: {len(all_chunks)}")
