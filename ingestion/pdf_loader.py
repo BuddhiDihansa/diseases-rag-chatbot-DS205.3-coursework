@@ -96,7 +96,7 @@ class PDFLoader:
         return text or table_text
 
 
-# Example usage (for testing this file individually)
+
 if __name__ == "__main__":
     # Create a dummy folder for a local test if needed
     os.makedirs("data/raw_pdfs", exist_ok=True)
