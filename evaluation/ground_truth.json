@@ -22,8 +22,8 @@
     },
     {
       "id": "q5",
-      "question": "What are the common symptoms of typhoid fever?",
-      "expected_answer": "Sustained high fever, weakness, stomach pain, headache, and loss of appetite."
+      "question": "What are the common symptoms of migraine?",
+      "expected_answer": "Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances."
     },
     {
       "id": "q6",
@@ -32,8 +32,8 @@
     },
     {
       "id": "q7",
-      "question": "What are the symptoms of a common cold vs COVID-19?",
-      "expected_answer": "Both can cause cough, sore throat, and fatigue, but COVID-19 more commonly causes loss of taste/smell and can lead to more severe respiratory symptoms."
+      "question": "What are the symptoms of influenza compared to COVID-19?",
+      "expected_answer": "Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza."
     },
     {
       "id": "q8",
