@@ -7,8 +7,10 @@ the ground truth, AND how faithful the answer is to the retrieved
 context.
 """
 
+import re
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util  # pip install sentence-transformers
+from nltk.stem import PorterStemmer  # pip install nltk (no extra data download needed)
 
 
 class Evaluator:
@@ -25,30 +27,35 @@ class Evaluator:
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
+        self.stemmer = PorterStemmer()
 
     def semantic_similarity_score(self, expected_answer: str, system_answer: str) -> float:
         """
         Cosine similarity between the sentence-transformer embeddings
-        of the expected vs system answer. Report Section IV should
-        refer to this explicitly as "cosine similarity" - it's the
-        standard metric name and reviewers will look for it by that
-        name specifically.
+        of the expected vs system answer.
         """
         embeddings = self.model.encode([expected_answer, system_answer], convert_to_tensor=True)
         similarity = util.cos_sim(embeddings[0], embeddings[1])
         return float(similarity[0][0])
 
-    @staticmethod
-    def _tokenize(text: str) -> set:
-        return set(text.lower().split())
+    def _tokenize(self, text: str) -> set:
+        """
+        Lowercase word tokens, punctuation stripped, then stemmed with
+        the Porter algorithm so word-form variants count as the same
+        token - "symptoms"/"symptom", "managed"/"manage",
+        "bleeding"/"bleed" all reduce to one shared stem. Without this,
+        two answers that are correct and mean exactly the same thing
+        can score zero overlap purely because one used the plural and
+        the other the singular, which has nothing to do with whether
+        the system's answer is actually right.
+        """
+        words = re.findall(r"[a-z0-9']+", text.lower())
+        return set(self.stemmer.stem(w) for w in words)
 
     def keyword_recall_score(self, expected_answer: str, system_answer: str) -> float:
         """
         Of the words in the expected (ground-truth) answer, what
-        fraction also appear in the system's answer? This is what the
-        old keyword_overlap_score() computed - kept as an alias below
-        for backward compatibility, renamed here to make clear it is
-        specifically RECALL, not a generic "overlap".
+        fraction also appear in the system's answer.
         """
         expected_words = self._tokenize(expected_answer)
         system_words = self._tokenize(system_answer)
@@ -60,9 +67,7 @@ class Evaluator:
     def keyword_precision_score(self, expected_answer: str, system_answer: str) -> float:
         """
         Of the words in the SYSTEM's answer, what fraction also appear
-        in the expected answer? Recall alone can't penalize a verbose
-        or padded answer that happens to contain every expected word
-        buried among a lot of irrelevant text - precision catches that.
+        in the expected answer.
         """
         expected_words = self._tokenize(expected_answer)
         system_words = self._tokenize(system_answer)
@@ -77,8 +82,6 @@ class Evaluator:
             return 0.0
         return 2 * (precision * recall) / (precision + recall)
 
-    # Kept as an alias so any existing code/tests calling the old name
-    # keep working unchanged.
     def keyword_overlap_score(self, expected_answer: str, system_answer: str) -> float:
         return self.keyword_recall_score(expected_answer, system_answer)
 
@@ -99,12 +102,6 @@ class Evaluator:
         keyword_f1 = self.keyword_f1_score(keyword_precision, keyword_recall)
         faith_score = self.faithfulness_score(faithful_verdict) if faithful_verdict else None
 
-        # NOTE: final_score's formula is unchanged from before (still
-        # uses recall, not F1, as the "keyword_score" component) so
-        # that accuracy numbers already tracked across evaluation runs
-        # stay directly comparable. Precision/recall/F1/cosine
-        # similarity are all reported below as additional columns for
-        # the report - they don't feed back into final_score.
         correctness_score = (semantic_score * 0.7) + (keyword_recall * 0.3)
 
         if faith_score is not None:
@@ -120,7 +117,6 @@ class Evaluator:
             "keyword_precision": round(keyword_precision, 3),
             "keyword_recall": round(keyword_recall, 3),
             "keyword_f1": round(keyword_f1, 3),
-            # kept for any code that reads the old key name
             "semantic_similarity": round(semantic_score, 3),
             "keyword_overlap": round(keyword_recall, 3),
             "faithful": faithful_verdict if faithful_verdict else "N/A",
