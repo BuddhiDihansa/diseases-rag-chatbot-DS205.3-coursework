@@ -1,4 +1,3 @@
-
 """
 settings.py
 Shared configuration for the entire project.
@@ -48,8 +47,10 @@ CHUNK_OVERLAP = 50
 
 # ---------- Hybrid Search Settings ----------
 # Weights must sum to 1.0. Vector search weighted higher since
-# semantic meaning matters more than exact keyword matches for
-# symptom-based queries (users describe symptoms in their own words).
+# semantic meaning matters more than exact keyword matches -
+# tested 0.5/0.5, reverted after it caused cross-document keyword
+# noise on definitional queries ("What is diabetes?"), see
+# hybrid_search.py for the full tuning note.
 BM25_WEIGHT = 0.4
 VECTOR_WEIGHT = 0.6
 TOP_K_RESULTS = 5
@@ -81,7 +82,3 @@ if __name__ == "__main__":
     print(f"Embedding Model: {EMBEDDING_MODEL}")
     print(f"Chunk Size: {CHUNK_SIZE}, Overlap: {CHUNK_OVERLAP}")
     print(f"BM25 Weight: {BM25_WEIGHT}, Vector Weight: {VECTOR_WEIGHT}")
-<<<<<<< HEAD
-
-=======
->>>>>>> Randini

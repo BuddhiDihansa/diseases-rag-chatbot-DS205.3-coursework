@@ -70,7 +70,7 @@ class MedicalAIPipeline:
         )
         self.max_reflection_attempts = max_reflection_attempts
 
-    def run(self, user_query: str, top_k: int = 5) -> dict:
+    def run(self, user_query: str, top_k: int = 7) -> dict:
         """
         Runs the full pipeline end-to-end for a single user query,
         with a self-correction (reflection) loop around
@@ -85,8 +85,25 @@ class MedicalAIPipeline:
         print("\n--- STEP 1: Symptom Analysis ---")
         structured_symptoms = self.symptom_agent.run(user_query)
 
+        # SymptomAgent sets this flag during run() above: True when the
+        # query had no extractable symptoms (a general/informational
+        # question rather than a symptom narration). Used below to widen
+        # retrieval and to pick the right ReasoningAgent prompt template.
+        is_informational = self.symptom_agent.last_is_informational
+
         # Step 2
         print("\n--- STEP 2: Retrieval ---")
+        # top_k default raised from 5 to 7 (see run() signature above).
+        # Evaluation showed some correct facts sat just outside the
+        # top-5 cutoff by a small margin (e.g. the primary Dengue
+        # symptom list scored close behind the top 5 chunks that were
+        # being returned) - 7 catches those borderline-relevant chunks.
+        # A larger jump (top_k*2 = 10) was tried earlier and reverted:
+        # it let unrelated documents that merely *mention* the topic in
+        # passing (e.g. "diabetes" referenced inside the kidney-disease
+        # guideline) crowd out the actually-relevant document for
+        # definitional queries. 7 is a smaller, safer step in the same
+        # direction.
         retrieved_context = self.retriever_agent.get_context_text(
             structured_symptoms,
             top_k=top_k,
@@ -106,6 +123,7 @@ class MedicalAIPipeline:
                 symptoms=structured_symptoms,
                 retrieved_context=retrieved_context,
                 feedback=feedback,
+                is_informational=is_informational,
             )
 
             print(

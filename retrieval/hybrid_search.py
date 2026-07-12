@@ -31,6 +31,17 @@ class HybridSearch:
         embedding_service: instance of EmbeddingService
         bm25_weight / vector_weight: how much each method contributes to final score
         (must sum to 1.0 - these values are worth tuning and justifying in your report)
+
+        Tuning note: 0.5/0.5 was tried and reverted. Raising bm25_weight
+        introduced cross-document keyword noise for definitional queries
+        ("What is diabetes?") - other guideline PDFs (kidney disease,
+        heart disease, asthma) mention "diabetes" repeatedly as a risk
+        factor/comorbidity, so BM25's term-frequency scoring ranked
+        those documents above the actual diabetes guideline once BM25's
+        weight increased, even though vector search alone had correctly
+        identified the diabetes PDF as most semantically relevant. Back
+        to 0.4/0.6 (vector-leaning) - see evaluation results for before/
+        after data justifying this in the report.
         reranker: optional CrossEncoderReranker instance (see reranker.py).
         When provided, search() fetches a wider shortlist from the
         BM25+vector stage, then hands it to the reranker for a final,
