@@ -83,7 +83,8 @@ class HybridSearch:
         self.corpus_chunks = []  # list of {"id":..., "text":..., "metadata":...}
 
     def build_bm25_index(self, chunk_ids: List[str], texts: List[str],
-                          metadatas: List[Dict[str, Any]] = None):
+                          metadatas: List[Dict[str, Any]] = None,
+                          index_texts: List[str] = None):
         """
         Build the BM25 index from all chunks.
         Must be called once after all chunks are added to the vector store.
@@ -91,6 +92,13 @@ class HybridSearch:
         metadatas: optional list of {"source_document":..., "page_number":...}
         aligned with chunk_ids/texts - carried through so search results can
         cite exactly where each chunk came from.
+
+        index_texts: optional list, parallel to `texts`, used ONLY for BM25
+        tokenization (not for display/LLM context). Lets the caller enrich
+        what gets keyword-matched (e.g. by prepending the source document
+        title) without changing the chunk text that's actually shown to the
+        user - same idea as the contextual-retrieval prefix used for
+        embeddings. Falls back to `texts` if not given.
         """
         if metadatas is None:
             metadatas = [{}] * len(chunk_ids)
@@ -99,7 +107,8 @@ class HybridSearch:
             {"id": cid, "text": text, "metadata": meta}
             for cid, text, meta in zip(chunk_ids, texts, metadatas)
         ]
-        tokenized_corpus = [text.lower().split() for text in texts]
+        tokenize_source = index_texts if index_texts is not None else texts
+        tokenized_corpus = [text.lower().split() for text in tokenize_source]
         self.bm25_index = BM25Okapi(tokenized_corpus)
         print(f"BM25 index built with {len(texts)} chunks.")
 

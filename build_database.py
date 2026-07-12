@@ -71,10 +71,28 @@ def build_database():
     embedding_service = EmbeddingService()
 
     chunk_ids = [c.chunk_id for c in all_chunks]
-    texts = [c.text for c in all_chunks]
+
+    # Contextual retrieval fix: many chunks (e.g. a bullet list under a
+    # generic section heading like "3.3 Management of children who do
+    # not need admission") never mention the disease name at all - it's
+    # only implied by the source PDF's title. A query like "What should
+    # someone with dengue avoid?" then fails to match that chunk on
+    # BM25 or embedding similarity, even though the chunk is exactly
+    # the right answer. Prepending a short document-derived context
+    # string to the text BEFORE embedding fixes this without changing
+    # what's shown to the user (the original c.text is still stored/
+    # displayed; only the embedding input changes).
+    def _document_title(filename: str) -> str:
+        return filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ")
+
+    embedding_inputs = [
+        f"Source document: {_document_title(c.source_document)}\n\n{c.text}"
+        for c in all_chunks
+    ]
+    texts = [c.text for c in all_chunks]  # original text: stored & shown to user, unchanged
     metadatas = [{"source_document": c.source_document} for c in all_chunks]
 
-    embeddings = embedding_service.embed_batch(texts)
+    embeddings = embedding_service.embed_batch(embedding_inputs)
 
     print("\n" + "=" * 60)
     print("STEP 5: Storing in vector database")
@@ -89,7 +107,7 @@ def build_database():
     print("=" * 60)
 
     hybrid_search = HybridSearch(vector_store=vector_store, embedding_service=embedding_service)
-    hybrid_search.build_bm25_index(chunk_ids, texts, metadatas)
+    hybrid_search.build_bm25_index(chunk_ids, texts, metadatas, index_texts=embedding_inputs)
 
     # Save the BM25 index data so main.py can load it without rebuilding.
     # FIXED: "metadatas" is now included - without it, BM25-only matches
@@ -97,7 +115,20 @@ def build_database():
     # their source_document citation and showed up as "unknown source" in
     # the retrieved context trace, weakening the Traceability requirement.
     with open("data/bm25_data.pkl", "wb") as f:
-        pickle.dump({"chunk_ids": chunk_ids, "texts": texts, "metadatas": metadatas}, f)
+        pickle.dump(
+            {
+                "chunk_ids": chunk_ids,
+                "texts": texts,
+                "metadatas": metadatas,
+                # context-prefixed versions of `texts`, used to rebuild the
+                # BM25 index identically when RetrieverAgent loads this file
+                # at runtime (see retriever_agent.py) - without this, the
+                # contextual-retrieval fix above would only apply the one
+                # time build_database.py itself runs, not on every app start.
+                "index_texts": embedding_inputs,
+            },
+            f,
+        )
 
     print("\n" + "=" * 60)
     print(f"DATABASE BUILD COMPLETE - {len(all_chunks)} chunks stored and indexed")
