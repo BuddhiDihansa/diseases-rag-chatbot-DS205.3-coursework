@@ -61,7 +61,9 @@ class MedicalAIPipeline:
         self.symptom_agent = symptom_agent or SymptomAgent(
             llm_client=shared_llm_client
         )
-        self.retriever_agent = retriever_agent or RetrieverAgent()
+        self.retriever_agent = retriever_agent or RetrieverAgent(
+            llm_client=shared_llm_client
+        )
         self.reasoning_agent = reasoning_agent or ReasoningAgent(
             llm_client=shared_llm_client
         )
@@ -104,9 +106,21 @@ class MedicalAIPipeline:
         # guideline) crowd out the actually-relevant document for
         # definitional queries. 7 is a smaller, safer step in the same
         # direction.
+        #
+        # expand_query=is_informational: query expansion (see
+        # retrieval/query_expander.py) is enabled only for
+        # informational questions, not symptom-triage ones. Symptom
+        # narrations ("fever, joint pain, rash") already match clinical
+        # text well via vector search since they use the same
+        # vocabulary the guidelines do. Informational questions phrased
+        # in layperson terms ("what should someone with dengue avoid?")
+        # are the ones that suffer from vocabulary mismatch against
+        # formal guideline language ("contraindicated", "NSAID") - that
+        # is where multi-query retrieval earns its extra LLM call.
         retrieved_context = self.retriever_agent.get_context_text(
             structured_symptoms,
             top_k=top_k,
+            expand_query=is_informational,
         )
 
         # Steps 3 + 4

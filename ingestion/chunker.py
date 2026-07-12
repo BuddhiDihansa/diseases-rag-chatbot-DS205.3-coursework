@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 
 @dataclass
@@ -10,6 +11,43 @@ class Chunk:
     text: str
     source_document: str
     chunk_index: int
+
+
+# Patterns that reliably identify front-matter/administrative content:
+# title pages, forewords ("Message from the Director..."), ISBN/
+# copyright notices, and tables of contents. These chunks carry no
+# clinical information, but they still surface in vector/BM25 search
+# because they repeat the disease name in formal prose (e.g. "dengue
+# continues to be a major health problem") - which was observed
+# crowding out genuinely relevant clinical chunks from the retrieved
+# top-k (see evaluation notes / Report Section III for the specific
+# example: a Director's foreword message outranked the actual DF/DHF
+# clinical case-definition chunk for "What are the symptoms of Dengue
+# fever?").
+_BOILERPLATE_PATTERNS = [
+    re.compile(r'\bMessage from the\b', re.IGNORECASE),
+    re.compile(r'\bISBN\b'),
+    re.compile(r'^\s*Contents\s*$', re.IGNORECASE | re.MULTILINE),
+]
+
+# A committee/acknowledgements list chunk typically contains several
+# "Dr <Name>" / "Prof <Name>" occurrences in a short span - real
+# clinical text almost never does.
+_NAME_TITLE_PATTERN = re.compile(r'\b(?:Dr|Prof)\s[A-Z][a-zA-Z\']+(?:\s[A-Z][a-zA-Z\']+)?')
+
+
+def is_boilerplate_chunk(text: str) -> bool:
+    """
+    Heuristically flags front-matter/administrative chunks so they can
+    be excluded from the corpus before embedding. See _BOILERPLATE_
+    PATTERNS docstring above for why this matters for retrieval
+    quality, not just corpus tidiness.
+    """
+    if any(pattern.search(text) for pattern in _BOILERPLATE_PATTERNS):
+        return True
+
+    name_title_hits = len(_NAME_TITLE_PATTERN.findall(text))
+    return name_title_hits >= 3
 
 
 class TextChunker:
@@ -123,7 +161,23 @@ class DataProcessor:
             
         # 3. Create overlapping word-snapped chunks
         dataclass_chunks = self._chunker.chunk_multiple_documents(cleaned_documents)
-        
+
+        # 3b. Drop front-matter/administrative chunks (title pages,
+        # committee/acknowledgements lists, forewords, ISBN/TOC pages)
+        # before they get embedded - see is_boilerplate_chunk() docstring.
+        kept_chunks = []
+        dropped_count = 0
+        for c in dataclass_chunks:
+            if is_boilerplate_chunk(c.text):
+                dropped_count += 1
+            else:
+                kept_chunks.append(c)
+
+        if dropped_count:
+            print(f"  [Chunker] Filtered out {dropped_count} boilerplate/"
+                  f"front-matter chunks out of {len(dataclass_chunks)} total.")
+        dataclass_chunks = kept_chunks
+
         # 4. Serialize objects into dictionary structures for Member 2's Vector Store
         serializable_payload = []
         for c in dataclass_chunks:
@@ -152,4 +206,3 @@ if __name__ == "__main__":
         print(f"{chunks[0].chunk_id}:")
         print(f"  starts: '{chunks[0].text[:40]}...'")
         print(f"  ends:   '...{chunks[0].text[-40:]}'\n")
-
