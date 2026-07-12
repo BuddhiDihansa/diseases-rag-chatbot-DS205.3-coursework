@@ -1,13 +1,9 @@
 """
-test_ingestion.py
-Tests for Member 1's ingestion module (pdf_loader, text_cleaner, chunker)
-
-Run with: pytest test_ingestion.py -v
+Tests for ingestion module (pdf_loader, text_cleaner, chunker)
+Run with: pytest tests/test_ingestion.py -v
 """
 
 import pytest
-
-# Fixed import locations matching your new flat root directory structure
 from ingestion.text_cleaner import TextCleaner
 from ingestion.chunker import TextChunker
 
@@ -36,8 +32,7 @@ class TestTextCleaner:
 
     def test_medical_notation_preservation(self):
         """
-        CRITICAL VIVA TEST: Ensures vital clinical dosage limits, ranges,
-        and measurement safety symbols are never stripped or corrupted.
+        Test that the text cleaner preserves clinical measurements and medical notation
         """
         medical_text = "Dosage: 40-120 mg, Temp: 38.5°C, Value: ≥ 5.0 μg ± 0.2"
         result = self.cleaner.remove_special_characters(medical_text)
