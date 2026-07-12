@@ -19,6 +19,7 @@ failed rather than mistake an error message for a real answer.
 """
 
 import os
+import re
 import time
 import requests  # pip install requests
 from utils.logger import get_logger
@@ -74,6 +75,26 @@ class LLMClient:
                 "(copy .env.example to .env and fill it in)."
             )
 
+    @staticmethod
+    def _strip_special_tokens(text: str) -> str:
+        """
+        Occasionally the Groq/Llama API leaks raw model-internal
+        formatting tokens into the response content, e.g.
+        '<|python_tag|>' or '<|start_header_id|>assistant<|end_header_id|>'.
+        These are never meant to be seen by callers and corrupt
+        downstream processing (e.g. a symptom-extraction result that
+        starts with a stray token instead of just the symptom list).
+
+        This removes:
+        1. Full header blocks like '<|start_header_id|>assistant<|end_header_id|>'
+           (the role name in between is also discarded, not just the tags).
+        2. Any remaining standalone '<|...|>'-style token.
+        Then strips leading/trailing whitespace left behind.
+        """
+        cleaned = re.sub(r"<\|start_header_id\|>.*?<\|end_header_id\|>", "", text, flags=re.DOTALL)
+        cleaned = re.sub(r"<\|.*?\|>", "", cleaned)
+        return cleaned.strip()
+
     def _throttle(self):
         """
         Blocks until at least min_interval_seconds have passed since the
@@ -121,7 +142,8 @@ class LLMClient:
 
                 response.raise_for_status()
                 data = response.json()
-                return data["choices"][0]["message"]["content"]
+                content = data["choices"][0]["message"]["content"]
+                return self._strip_special_tokens(content)
 
             except (
                 requests.exceptions.Timeout,
