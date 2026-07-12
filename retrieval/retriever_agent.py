@@ -98,10 +98,14 @@ class RetrieverAgent:
         if os.path.exists(bm25_data_path):
             with open(bm25_data_path, "rb") as f:
                 bm25_data = pickle.load(f)
-            # metadatas key may be missing in older pickles built before this
-            # traceability update - fall back gracefully instead of crashing.
+            # metadatas/index_texts keys may be missing in older pickles
+            # built before these updates - fall back gracefully instead of
+            # crashing.
             metadatas = bm25_data.get("metadatas")
-            self.hybrid_search.build_bm25_index(bm25_data["chunk_ids"], bm25_data["texts"], metadatas)
+            index_texts = bm25_data.get("index_texts")  # context-prefixed text for keyword matching
+            self.hybrid_search.build_bm25_index(
+                bm25_data["chunk_ids"], bm25_data["texts"], metadatas, index_texts=index_texts
+            )
             print(f"[RetrieverAgent] Loaded BM25 index with {len(bm25_data['texts'])} chunks.")
         else:
             print("[RetrieverAgent] WARNING: No BM25 data found. Run build_database.py first.")
