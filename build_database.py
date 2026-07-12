@@ -17,6 +17,7 @@ from retrieval.embedding_service import EmbeddingService
 from retrieval.vector_store import VectorStore
 from retrieval.hybrid_search import HybridSearch
 import pickle
+import re
 
 
 def build_database():
@@ -72,23 +73,64 @@ def build_database():
 
     chunk_ids = [c.chunk_id for c in all_chunks]
 
-    # Contextual retrieval fix: many chunks (e.g. a bullet list under a
-    # generic section heading like "3.3 Management of children who do
-    # not need admission") never mention the disease name at all - it's
-    # only implied by the source PDF's title. A query like "What should
-    # someone with dengue avoid?" then fails to match that chunk on
-    # BM25 or embedding similarity, even though the chunk is exactly
-    # the right answer. Prepending a short document-derived context
-    # string to the text BEFORE embedding fixes this without changing
-    # what's shown to the user (the original c.text is still stored/
-    # displayed; only the embedding input changes).
-    def _document_title(filename: str) -> str:
-        return filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ")
+    # Contextual retrieval fix (v3 - EXPLICIT MAPPING):
+    # v1 prepended "Source document: <title>" to EVERY chunk - didn't
+    # change relative ranking WITHIN a document (every chunk in it got
+    # the same boost) and perturbed embeddings of chunks that already
+    # retrieved fine, causing regressions elsewhere (mild-asthma-
+    # treatment and diabetic-diet answers got worse in the 2nd eval run).
+    #
+    # v2 tried to auto-extract a "disease keyword" from each filename
+    # and only prefix chunks missing it. This broke in two ways:
+    #  - "fever" is too generic: it appears in an unrelated paracetamol-
+    #    dosing chunk, so that chunk was wrongly judged as "already
+    #    mentioning the disease" and skipped - the exact bug we're
+    #    trying to fix.
+    #  - GINA-2026-Strategy-Report-WMS.pdf never contains the word
+    #    "asthma" in its filename at all (GINA = Global INitiative for
+    #    Asthma, an acronym) - filename parsing can't recover a
+    #    keyword that isn't there.
+    #
+    # v3 uses an explicit, human-curated mapping instead of guessing.
+    # There are only ~14 source PDFs, so hand-mapping each to its real
+    # topic is trivial and far more reliable than filename heuristics.
+    # Update this dict if new PDFs are added to data/raw_pdf/.
+    _DOCUMENT_TOPIC = {
+        "3426_dmkg-treatment-of-migraine-attacks-and-prevention-of-migraine.pdf": "migraine",
+        "COVID 19.pdf": "COVID-19",
+        "GINA-2026-Strategy-Report-WMS.pdf": "asthma",
+        "Guidelines-on-Management-of-Dengue-Fever.pdf": "dengue fever",
+        "Heart Disease.pdf": "heart disease",
+        "Influenza-Diagnosis-and-Treatment.pdf": "influenza",
+        "Influenza-guidelines_-25April-2023-final.pdf": "influenza",
+        "Migraine.pdf": "migraine",
+        "NSD610-014-CYANS-Management-of-food-allerg.pdf": "food allergy",
+        "anaemia-symptoms-causes-prevention-diagnosis-and-treatment.pdf": "anaemia",
+        "diabetescare-guideline-may-2026.pdf": "diabetes",
+        "heart disease cad-guide.pdf": "heart disease",
+        "kidney disease.pdf": "kidney disease",
+        "kidney disease_full_guideline.pdf": "kidney disease",
+        "nhlbi-ospeec-your-guide-to-anemia-booklet-release-508.pdf": "anaemia",
+    }
 
-    embedding_inputs = [
-        f"Source document: {_document_title(c.source_document)}\n\n{c.text}"
-        for c in all_chunks
-    ]
+    def _topic_for(filename: str) -> str:
+        return _DOCUMENT_TOPIC.get(filename, filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " "))
+
+    def _needs_context_prefix(chunk_text: str, filename: str) -> bool:
+        topic = _topic_for(filename)
+        return topic.lower() not in chunk_text.lower()
+
+    embedding_inputs = []
+    prefixed_count = 0
+    for c in all_chunks:
+        if _needs_context_prefix(c.text, c.source_document):
+            embedding_inputs.append(f"Topic: {_topic_for(c.source_document)}\n\n{c.text}")
+            prefixed_count += 1
+        else:
+            embedding_inputs.append(c.text)
+    print(f"Added contextual prefix to {prefixed_count}/{len(all_chunks)} chunks "
+          f"(only those missing their document's topic name).")
+
     texts = [c.text for c in all_chunks]  # original text: stored & shown to user, unchanged
     metadatas = [{"source_document": c.source_document} for c in all_chunks]
 
