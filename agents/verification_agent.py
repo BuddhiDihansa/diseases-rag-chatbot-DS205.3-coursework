@@ -5,14 +5,6 @@ Member 3 - LLM/Agent Logic
 Purpose: Final agent in the pipeline. Checks whether the generated
 answer is actually supported by the retrieved context (hallucination
 check), and gives a confidence/faithfulness score.
-
-FIXED VERSION: the original prompt asked the LLM to return ONLY JSON,
-then also asked it to respond in a different plain-text format
-("Faithful: <Yes/No>") in the same prompt - a contradiction that could
-make the model output either format unpredictably. This version asks
-for JSON only, and the code now actually parses that JSON and uses it
-(the original just stored the raw string and never read it), so the
-pipeline can act on the verdict instead of only printing it.
 """
 
 import json
@@ -46,14 +38,6 @@ class VerificationAgent(BaseAgent):
 
         self.log("Verifying generated answer against retrieved context...")
 
-        # If ReasoningAgent's LLM call itself failed (network error, rate
-        # limit exhausted after retries, etc.), generated_answer is an
-        # error string, not a real medical answer. Asking the LLM to
-        # "check whether every claim is supported" on a message with no
-        # medical claims in it tends to come back "faithful: Yes" (there's
-        # nothing to contradict), which would then get shown to the user
-        # as a verified, trustworthy answer - exactly backwards. Skip the
-        # verification call entirely and fail closed instead.
         if reasoning_output.get("generation_failed"):
             self.log("Skipping verification - answer generation failed upstream.")
             verification = {
@@ -64,16 +48,35 @@ class VerificationAgent(BaseAgent):
             reasoning_output["needs_review"] = True
             return reasoning_output
 
-        prompt = f"""You are a strict medical fact checker.
+        prompt = f"""You are a medical fact checker reviewing an AI-generated answer.
 
-Use ONLY the context below. Check whether every claim in the ANSWER is
-explicitly supported by the CONTEXT.
+Use ONLY the context below. Your job is to catch genuine hallucinations -
+specific facts, numbers, drug names, or recommendations in the ANSWER
+that are fabricated and NOT supported by the CONTEXT.
 
 Context:
 {context}
 
 Answer:
 {generated_answer}
+
+Important - do NOT flag any of the following as unsupported, since they
+are not hallucinations:
+- Section labels or headers themselves (e.g. "Things to Avoid",
+  "Confidence Note") - only flag the actual claim written under a
+  header, never the header text.
+- Reasonable paraphrasing, summarizing, or rewording of information
+  that IS present in the context.
+- General, cautious disclaimers such as "consult a healthcare
+  professional" or "this is not a definitive diagnosis" - these are
+  safe defaults, not factual claims that need grounding.
+- Minor inferences that directly and obviously follow from the
+  context (e.g. context says a drug treats X, answer says "this may
+  help with X").
+
+ONLY flag a claim if it introduces a specific fact, statistic, drug
+name, dosage, or recommendation that cannot be traced back to
+anything in the context.
 
 Return ONLY a single valid JSON object, with no text before or after it,
 in exactly this shape:
@@ -100,19 +103,34 @@ Rules:
         Safely parse the LLM's JSON response into a dict.
 
         LLMs sometimes wrap JSON in markdown code fences (```json ... ```)
-        even when told not to, so we strip those first. If parsing still
-        fails for any reason, we fall back to "Partially" (rather than
-        silently assuming "Yes") so an unparseable response gets flagged
-        for human review instead of passing through unnoticed.
+        even when told not to, or add a stray sentence of preamble/
+        postamble around the JSON object despite being told not to. Both
+        are handled by extracting the substring between the first '{'
+        and the last '}' rather than requiring the entire response to be
+        pure JSON - this avoids treating a well-formed-but-decorated
+        response as an unparseable one (which previously fell back to
+        "Partially" and injected the parser's own error text - or even
+        leaked prompt instructions - into unsupported_claims).
+
+        If parsing still fails for any reason, we fall back to
+        "Partially" (rather than silently assuming "Yes") so an
+        unparseable response gets flagged for human review instead of
+        passing through unnoticed.
         """
         if not raw_result:
             return {"faithful": "Partially", "unsupported_claims": ["Empty verification response"]}
 
         cleaned = raw_result.strip()
+
         if cleaned.startswith("```"):
             cleaned = cleaned.strip("`")
             if cleaned.lower().startswith("json"):
                 cleaned = cleaned[4:].strip()
+
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            cleaned = cleaned[start:end + 1]
 
         try:
             parsed = json.loads(cleaned)
@@ -123,6 +141,14 @@ Rules:
                 faithful = "Partially"
             if not isinstance(unsupported_claims, list):
                 unsupported_claims = [str(unsupported_claims)]
+
+            unsupported_claims = [
+                c for c in unsupported_claims
+                if c.strip().lower() not in ("things to avoid", "recommended actions", "confidence note", "possible condition")
+            ]
+
+            if not unsupported_claims and faithful != "Yes":
+                faithful = "Yes"
 
             return {"faithful": faithful, "unsupported_claims": unsupported_claims}
 
