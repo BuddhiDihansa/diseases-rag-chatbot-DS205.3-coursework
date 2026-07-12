@@ -1,14 +1,24 @@
 """
 evaluator.py
-Member 4 - Evaluation & Report
+Member 4 - Evaluation 
 
 Purpose: Programmatically score how well the system's answers match
 the ground truth, AND how faithful the answer is to the retrieved
 context.
 """
 
+import re
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util  # pip install sentence-transformers
+
+# ReasoningAgent's four section labels are identical boilerplate on
+# every single answer, correct or wrong - they add no discriminating
+# signal to a semantic similarity comparison, so we strip them before
+# embedding and compare only the actual medical content.
+_TEMPLATE_LABELS = re.compile(
+    r"(possible condition|confidence note|recommended actions|things to avoid)\s*:",
+    re.IGNORECASE
+)
 
 
 class Evaluator:
@@ -26,14 +36,33 @@ class Evaluator:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
 
+    @staticmethod
+    def _strip_template_labels(text: str) -> str:
+        """Remove ReasoningAgent's fixed section headers, keep the content."""
+        return _TEMPLATE_LABELS.sub("", text)
+
+    @staticmethod
+    def _tokenize(text: str) -> set:
+        """
+        Lowercase word tokens with punctuation stripped, so "pain." and
+        "pain," and "pain" are all treated as the same token. Plain
+        .split() treats trailing punctuation as part of the word, which
+        silently fails to match perfectly correct overlapping words and
+        quietly deflates every score in the batch.
+        """
+        return set(re.findall(r"[a-z0-9']+", text.lower()))
+
     def semantic_similarity_score(self, expected_answer: str, system_answer: str) -> float:
-        embeddings = self.model.encode([expected_answer, system_answer], convert_to_tensor=True)
+        cleaned_system_answer = self._strip_template_labels(system_answer)
+        embeddings = self.model.encode(
+            [expected_answer, cleaned_system_answer], convert_to_tensor=True
+        )
         similarity = util.cos_sim(embeddings[0], embeddings[1])
         return float(similarity[0][0])
 
     def keyword_overlap_score(self, expected_answer: str, system_answer: str) -> float:
-        expected_words = set(expected_answer.lower().split())
-        system_words = set(system_answer.lower().split())
+        expected_words = self._tokenize(expected_answer)
+        system_words = self._tokenize(system_answer)
         if not expected_words:
             return 0.0
         overlap = expected_words.intersection(system_words)
