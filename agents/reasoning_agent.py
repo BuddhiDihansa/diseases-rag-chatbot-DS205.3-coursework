@@ -31,15 +31,31 @@ class ReasoningAgent(BaseAgent):
         self,
         symptoms: str,
         retrieved_context: str,
-        feedback: str = None
+        feedback: str = None,
+        is_informational: bool = False,
     ) -> dict:
         """
         Generate a grounded answer using retrieved context only.
 
         Args:
-            symptoms: Structured symptoms from SymptomAgent.
+            symptoms: Structured symptoms from SymptomAgent (or, for
+                informational queries, the original question text).
             retrieved_context: Retrieved chunks from RetrieverAgent.
             feedback: Optional verification feedback.
+            is_informational: True when the input was a general medical
+                question ("What is diabetes?") rather than a symptom
+                narration ("I have a fever"). SymptomAgent sets this via
+                its `last_is_informational` flag - see services/pipeline.py.
+                Forcing every answer into the "Possible Condition /
+                Recommended Actions / Things to Avoid" diagnostic-report
+                format made sense for symptom-triage queries, but was a
+                bad fit for informational questions: the model had to
+                awkwardly stretch a direct factual answer (e.g. "what are
+                asthma symptoms") into a diagnosis-shaped template, which
+                diluted the specific facts the ground-truth answer expects
+                and hurt both semantic-similarity and keyword-overlap
+                evaluation scores. Informational queries now get a prompt
+                that asks for a direct, concise factual answer instead.
 
         Returns:
             dict
@@ -71,7 +87,33 @@ Use ONLY information explicitly supported by the retrieved context.
 Do NOT invent new medical facts.
 """
 
-        prompt = f"""
+        if is_informational:
+            prompt = f"""
+You are a medical Retrieval-Augmented Generation (RAG) assistant.
+
+You MUST answer ONLY using the retrieved context below.
+
+Rules:
+- Do NOT use outside medical knowledge.
+- Do NOT guess.
+- Do NOT invent facts, figures, drug names, or statistics.
+- If the retrieved context is insufficient to answer, clearly say so.
+- Answer the question DIRECTLY and CONCISELY - state the specific
+  facts asked for (e.g. the actual symptoms, causes, or treatment
+  steps). Do NOT force the answer into a diagnosis/action-plan
+  format, and do NOT invent a "Possible Condition" if the question
+  did not describe a patient's symptoms.
+{feedback_block}
+Retrieved Context:
+{retrieved_context}
+
+Question:
+{symptoms}
+
+Answer:
+"""
+        else:
+            prompt = f"""
 You are a medical Retrieval-Augmented Generation (RAG) assistant.
 
 You MUST answer ONLY using the retrieved context.
