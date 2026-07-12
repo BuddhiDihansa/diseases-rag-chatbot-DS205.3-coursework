@@ -109,10 +109,24 @@ class LLMClient:
             time.sleep(wait)
         self._last_call_time = time.time()
 
-    def generate(self, prompt: str, max_tokens: int = 1500) -> str:
+    def generate(self, prompt: str, max_tokens: int = 1500, temperature: float = 0.0) -> str:
         """
         Send a prompt to the Groq LLM and return the text response.
         Groq uses the same request/response format as OpenAI's API.
+
+        temperature: defaults to 0.0 (deterministic/greedy decoding).
+        Without this, the API defaults to a much higher temperature
+        (~0.7-1.0), which caused the SAME question to get genuinely
+        different behavior across separate evaluation runs - e.g.
+        SymptomAgent sometimes correctly returning an empty string for
+        "What are the warning signs of a heart attack?" (an
+        informational question) and other times inventing a fake
+        patient symptom list from words in the question itself. That
+        run-to-run randomness makes the evaluation script's accuracy
+        number unreproducible, which is a problem for an empirical
+        evaluation report. A medical RAG assistant should also be
+        answering consistently for the same input regardless - there's
+        no need for creative variation here.
 
         Retries transient failures (network errors, timeouts, 429/5xx
         responses) up to max_retries times with exponential backoff.
@@ -135,6 +149,7 @@ class LLMClient:
                     json={
                         "model": self.model,
                         "max_tokens": max_tokens,
+                        "temperature": temperature,
                         "messages": [{"role": "user", "content": prompt}],
                     },
                     timeout=30,

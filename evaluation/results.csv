@@ -1,139 +1,28 @@
 question,expected_answer,system_answer,semantic_similarity,keyword_overlap,faithful,faithfulness_score,unsupported_claims,final_score_percent
-What are the symptoms of Dengue fever?,"High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash.","Possible Condition:
-Dengue Fever (DF) or Dengue Haemorrhagic Fever (DHF) or Expanded Dengue Syndrome
+What are the symptoms of Dengue fever?,"High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash.","Respiratory symptoms such as cough, rhinitis or injected pharynx and gastrointestinal symptoms such as abdominal pain, diarrhoea or vomiting.",0.464,0.125,Yes,1.0,,61.7%
+What is diabetes?,"A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels.","Diabetes is a disease characterized by hyperglycemia due to defective insulin secretion, defective insulin action or both.",0.672,0.192,Yes,1.0,,71.7%
+What are the symptoms of asthma?,"Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning.","Wheezing, shortness of breath, chest tightness, and cough.",0.909,0.5,Yes,1.0,,87.2%
+What should someone with dengue avoid?,Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration.,The retrieved context does not provide information on what someone with dengue should avoid.,0.278,0.0,Yes,1.0,,51.7%
+What are the common symptoms of migraine?,"Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances.","Common symptoms of migraine include:
+1. Flashing or shimmering light
+2. Seeing zigzag lines or waves (fortification illusions)
+3. Seeing spots, floaters, circles, lines, or other shapes and colors in vision
+4. Blurred vision
+5. Temporary loss of vision
+6. Tingling or numbness
+7. One-sided head pain 
 
-Confidence Note:
-The provided context is sufficient to list potential symptoms, but diagnosis requires laboratory confirmation.
-
-Recommended Actions:
-- Perform Dengue NS1 Antigen test in the first few days of illness for early diagnosis.
-- Monitor for respiratory symptoms such as cough, rhinitis, or injected pharynx.
-- Monitor for gastrointestinal symptoms such as abdominal pain, diarrhoea, or vomiting.
-- Evaluate for classical clinical presentation and differentiation between DF and DHF.
-
-Things to Avoid:
-- No specific actions to avoid are mentioned in the context, but it is implied that delayed diagnosis or failure to monitor for complications could lead to adverse outcomes.",0.439,0.188,Yes,1.0,,61.8%
-What is diabetes?,"A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels.","Possible Condition:
-Diabetes, a disease characterized by hyperglycemia due to defective insulin secretion, defective insulin action or both.
-
-Confidence Note:
-The information is based on the provided context from the diabetescare-guideline-may-2026.pdf, which appears to be a reliable source.
-
-Recommended Actions:
-- Consult with a healthcare provider to define goals and reduce the likelihood of adverse effects.
-- Consider healthy behaviour changes, such as eating well and being physically active, especially for those with prediabetes and overweight/obesity.
-- People ≥ 40 years of age and those younger than 40 with risk factors should be screened for diabetes using glycosylated hemoglobin (A1C) or fasting plasma glucose.
-
-Things to Avoid:
-- No specific actions to avoid are mentioned in the context, but it is implied that conventional treatment options may not be feasible for all people, and individuals should consult with their healthcare provider before making any significant changes to their diet or treatment plan.",0.542,0.346,Yes,1.0,,69.0%
-What are the symptoms of asthma?,"Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning.","Possible Condition:
-Asthma
-
-Confidence Note:
-The patient's symptoms are consistent with asthma, which is characterized by variable respiratory symptoms such as wheeze, shortness of breath, chest tightness, and cough, and variable expiratory airflow.
-
-Recommended Actions:
-- Consider the pattern of respiratory symptoms, such as wheezing, shortness of breath, chest tightness, or cough, and variable expiratory airflow.
-- Evaluate the patient's symptoms and medical history to confirm the diagnosis of asthma.
-- Refer to Box 1-3 (p.30) and Box 1-4 (p.30) for guidance on confirming the diagnosis.
-
-Things to Avoid:
-- Not considering other acute or chronic conditions that may cause similar respiratory symptoms.
-- Not documenting the evidence supporting a diagnosis of asthma when the patient first presents.",0.648,0.571,Yes,1.0,,77.5%
-What should someone with dengue avoid?,Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration.,"Possible Condition:
-Dengue Fever
-
-Confidence Note:
-The retrieved context does not provide specific information on what someone with dengue should avoid, but it discusses the management and complications of dengue fever.
-
-Recommended Actions:
-- Early identification and proper medical care are crucial for patients with dengue.
-- Following the Guidelines on the management of Dengue Fever and Dengue Haemorrhagic Fever in Children and Adolescents may be helpful.
-
-Things to Avoid:
-- The retrieved context does not provide specific information on what to avoid, but it mentions that overlooking early identification and proper medical care can have poor outcomes.",0.397,0.143,Yes,1.0,,59.2%
-What are the common symptoms of migraine?,"Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances.","Possible Condition:
-Migraine
-
-Confidence Note:
-The patient's symptoms are consistent with the common symptoms of migraine, which include visual disturbances, headaches, and other associated symptoms.
-
-Recommended Actions:
-- Consult a neurologist for a proper diagnosis and treatment plan
-- Keep a headache diary to track symptoms and identify potential triggers
-- Avoid triggers such as emotional factors, hormonal changes, dietary factors, and physical factors
-
-Things to Avoid:
-- Emotional factors such as stress, anxiety, and depression
-- Hormonal changes, such as oestrogen level fluctuations
-- Dietary factors, such as missed meals, chocolate, citrus fruits, dairy, dehydration, alcohol, and caffeine
-- Physical factors, such as fatigue, poor sleep patterns, and lack of routine",0.446,0.25,Yes,1.0,,63.2%
-How is hypertension managed?,"Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor.","Possible Condition:
-Hypertension
-
-Confidence Note:
-The information provided is based on the retrieved context from the guideline documents, which appears to be sufficient to address the question of how hypertension is managed.
-
-Recommended Actions:
-- Measure BP at diagnosis and at every diabetes clinic visit, targeting 130/80
-- If healthy behavior interventions are insufficient, consider pharmacological treatment
-- First-line treatment: ACEi or ARB (if ACEi intolerant)
-- Second-line treatment: Dihydropyridine calcium channel blocker
-- Consider thiazide-like diuretics (e.g., hydrochlorothiazide, chlorthalidone) for cardiovascular benefits in patients with CKD
-
-Things to Avoid:
-- Insufficient management of hypertension, which can lead to microvascular diabetic endpoints, stroke, and major cardiovascular events
-- Not monitoring BP regularly, which can lead to inadequate control of hypertension",0.505,0.15,Yes,1.0,,63.9%
-What are the symptoms of influenza compared to COVID-19?,"Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza.","Possible Condition:
-Influenza or COVID-19, as both diseases have overlapping signs and symptoms, including loss of taste and smell, fever, and upper respiratory symptoms.
-
-Confidence Note:
-The retrieved context is insufficient to provide a definitive diagnosis, as the symptoms of influenza and COVID-19 can be similar, but it can be noted that loss of taste and smell is more common with COVID-19.
-
-Recommended Actions:
-- Consider influenza vaccination to decrease the chances of getting influenza, especially for healthcare workers and high-risk groups.
-- Monitor for symptoms such as hypoxaemia, dyspnoea, tachypnoea, lower chest wall indrawing, and inability to feed, which may indicate a lower respiratory tract infection.
-
-Things to Avoid:
-- Assuming that symptoms are definitively caused by either influenza or COVID-19 without further testing or medical evaluation.
-- Delaying medical attention if severe symptoms or complications arise, such as respiratory failure or acute respiratory distress syndrome.",0.806,0.552,Yes,1.0,,83.8%
-What are the warning signs of a heart attack?,"Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness.","Possible Condition:
-Heart Attack or Cardiovascular Disease
-
-Confidence Note:
-The provided symptoms and information are insufficient to determine the exact condition, but the patient may be experiencing a heart attack or cardiovascular disease.
-
-Recommended Actions:
-- Call for emergency treatment (911) at the first signs of a heart attack.
-- Seek medical attention if symptoms such as pain or discomfort in the center of the chest, left arm or back, unusually rapid heartbeat, shortness of breath, nausea, or fatigue are experienced.
-
-Things to Avoid:
-- Waiting for symptoms to go away before seeking medical attention.
-- Delaying emergency treatment.",0.633,0.588,Yes,1.0,,77.2%
-What is the recommended treatment for mild asthma attacks?,"Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers.","Possible Condition:
-Asthma, potentially mild asthma with risk of severe or fatal exacerbations
-
-Confidence Note:
-The provided context is sufficient to suggest that the patient's symptoms may be related to asthma, but it is insufficient to determine the severity or underlying pathology of the condition.
-
-Recommended Actions:
-- Assess symptom control from the frequency of daytime and night-time asthma symptoms, night waking, and activity limitation
-- Consider ICS-containing treatment to reduce the risk of exacerbations
-- Monitor for signs of severe or fatal exacerbations, even in patients with infrequent symptoms
-
-Things to Avoid:
-- Complacency in treating mild asthma, as it can still pose a risk of severe or fatal exacerbations
-- Assuming that mild asthma means the patient is at low risk and does not need ICS-containing treatment",0.465,0.308,Yes,1.0,,65.1%
-What precautions should a diabetic patient take with their diet?,"Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly.","Possible Condition:
-Diabetes
-
-Confidence Note:
-The information is based on the retrieved context from diabetescare-guideline-may-2026.pdf, which provides guidelines for diabetes care.
-
-Recommended Actions:
-- Consult with their health-care provider to define goals and reduce the likelihood of adverse effects.
-- Consider healthy behaviour changes, such as eating well and regular physical activity, to achieve a modest weight loss of 5% of initial body weight.
-- May need more frequent blood glucose monitoring and adjustment of medications that may cause hypoglycemia.
-
-Things to Avoid:
-- Pursuing low carbohydrate diets or intermittent diets without consulting their health-care provider, as they may cause hypoglycemia.",0.624,0.222,Yes,1.0,,70.2%
+Additionally, other associated symptoms include:
+1. Feeling sick (nausea)
+2. Being sick (vomiting)
+3. Sensitivity to light (photophobia)
+4. Sensitivity to noise 
+5. Visual disturbances
+6. Numbness
+7. Tingling sensations
+8. Difficulty with speech.",0.523,0.333,Yes,1.0,,68.0%
+How is hypertension managed?,"Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor.","Hypertension is managed with a target of 130/80. If healthy behavior interventions are insufficient, then pharmacological treatment may be required. First-line treatment is ACEi or ARB (if ACEi intolerant), and second-line treatment is Dihydropyridine calcium channel. Additionally, antihypertensive drugs such as thiazide-like diuretics (e.g., hydrochlorothiazide, chlorthalidone) have shown consistent cardiovascular benefits in participants with CKD. Blood pressure should be measured at diagnosis and at every diabetes clinic visit.",0.516,0.3,Yes,1.0,,67.1%
+What are the symptoms of influenza compared to COVID-19?,"Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza.","The signs and symptoms of uncomplicated influenza overlap with those of mild COVID-19. Loss of taste and smell can occur with both diseases, but these symptoms are more common with COVID-19. Symptoms of influenza include lower respiratory tract infection (hypoxaemia, dyspnoea, tachypnoea, lower chest wall indrawing and inability to feed), and central nervous system involvement. Fever is not always present in patients with either disease.",0.867,0.345,Yes,1.0,,82.6%
+What are the warning signs of a heart attack?,"Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness.","Pain or discomfort in the center of the chest, left arm or back, unusually rapid heartbeat, shortness of breath, nausea or fatigue.",0.872,0.412,Yes,1.0,,84.0%
+What is the recommended treatment for mild asthma attacks?,"Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers.","Reliever medications for as-needed symptom relief, and long-term daily use of low-dose ICS treatment to keep asthma well controlled.",0.449,0.231,Yes,1.0,,63.0%
+What precautions should a diabetic patient take with their diet?,"Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly.","People with diabetes may choose to try to lose weight by changing their diet, they should consult with their health-care provider to define goals and reduce the likelihood of adverse effects, and may need more frequent blood glucose monitoring and adjustment of medications that may cause hypoglycemia, especially if pursuing low carbohydrate diets or intermittent diets.",0.564,0.222,Yes,1.0,,67.7%
