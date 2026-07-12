@@ -1,28 +1,23 @@
 question,expected_answer,system_answer,semantic_similarity,keyword_overlap,faithful,faithfulness_score,unsupported_claims,final_score_percent
-What are the symptoms of Dengue fever?,"High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash.","Respiratory symptoms such as cough, rhinitis or injected pharynx and gastrointestinal symptoms such as abdominal pain, diarrhoea or vomiting.",0.464,0.125,Yes,1.0,,61.7%
-What is diabetes?,"A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels.","Diabetes is a disease characterized by hyperglycemia due to defective insulin secretion, defective insulin action or both.",0.672,0.192,Yes,1.0,,71.7%
-What are the symptoms of asthma?,"Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning.","Wheezing, shortness of breath, chest tightness, and cough.",0.909,0.5,Yes,1.0,,87.2%
+What are the symptoms of Dengue fever?,"High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash.","Headache, retro-orbital pain, nausea or vomiting, arthralgia, myalgia, flushed appearance of the skin, rash (diffuse, erythematous, macular), respiratory symptoms such as cough, rhinitis or injected pharynx, and gastrointestinal symptoms such as abdominal pain, diarrhoea or vomiting.",0.698,0.312,Yes,1.0,,74.9%
+What is diabetes?,"A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels.","Diabetes is a disease characterized by hyperglycemia due to defective insulin secretion, defective insulin action, or both.",0.676,0.192,Yes,1.0,,71.9%
+What are the symptoms of asthma?,"Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning.","The symptoms of asthma include wheeze, shortness of breath, chest tightness, and cough.",0.756,0.429,Yes,1.0,,79.5%
 What should someone with dengue avoid?,Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration.,The retrieved context does not provide information on what someone with dengue should avoid.,0.278,0.0,Yes,1.0,,51.7%
 What are the common symptoms of migraine?,"Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances.","Common symptoms of migraine include:
-1. Flashing or shimmering light
-2. Seeing zigzag lines or waves (fortification illusions)
-3. Seeing spots, floaters, circles, lines, or other shapes and colors in vision
-4. Blurred vision
-5. Temporary loss of vision
-6. Tingling or numbness
-7. One-sided head pain 
-
-Additionally, other associated symptoms include:
-1. Feeling sick (nausea)
-2. Being sick (vomiting)
-3. Sensitivity to light (photophobia)
-4. Sensitivity to noise 
-5. Visual disturbances
-6. Numbness
-7. Tingling sensations
-8. Difficulty with speech.",0.523,0.333,Yes,1.0,,68.0%
-How is hypertension managed?,"Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor.","Hypertension is managed with a target of 130/80. If healthy behavior interventions are insufficient, then pharmacological treatment may be required. First-line treatment is ACEi or ARB (if ACEi intolerant), and second-line treatment is Dihydropyridine calcium channel. Additionally, antihypertensive drugs such as thiazide-like diuretics (e.g., hydrochlorothiazide, chlorthalidone) have shown consistent cardiovascular benefits in participants with CKD. Blood pressure should be measured at diagnosis and at every diabetes clinic visit.",0.516,0.3,Yes,1.0,,67.1%
-What are the symptoms of influenza compared to COVID-19?,"Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza.","The signs and symptoms of uncomplicated influenza overlap with those of mild COVID-19. Loss of taste and smell can occur with both diseases, but these symptoms are more common with COVID-19. Symptoms of influenza include lower respiratory tract infection (hypoxaemia, dyspnoea, tachypnoea, lower chest wall indrawing and inability to feed), and central nervous system involvement. Fever is not always present in patients with either disease.",0.867,0.345,Yes,1.0,,82.6%
+- Flashing or shimmering light
+- Seeing zigzag lines or waves (fortification illusions)
+- Seeing spots, floaters, circles, lines, or other shapes and colors in vision
+- Blurred vision
+- Temporary loss of vision
+- Tingling or numbness
+- One-sided head pain
+- Feeling sick (nausea)
+- Being sick (vomiting)
+- Sensitivity to light (photophobia)
+- Sensitivity to noise 
+- Throbbing or pulsating pain (usually on one side of the head)",0.554,0.458,Yes,1.0,,71.5%
+How is hypertension managed?,"Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor.","Hypertension is managed with a target of 130/80. If healthy behavior interventions are insufficient, then pharmacological treatment may be required. First-line treatment is ACEi or ARB (if ACEi intolerant), and second-line treatment is Dihydropyridine calcium channel. Additionally, thiazide-like diuretics (e.g., hydrochlorothiazide, chlorthalidone, etc.) have been found to have consistent cardiovascular benefits in participants with CKD.",0.51,0.2,Yes,1.0,,65.0%
+What are the symptoms of influenza compared to COVID-19?,"Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza.","The symptoms of uncomplicated influenza overlap with those of mild COVID-19. Both diseases can cause loss of taste and smell, but these symptoms are more common with COVID-19. Fever is not always present in patients with either disease. Influenza symptoms can include lower respiratory tract infection (hypoxaemia, dyspnoea, tachypnoea, lower chest wall indrawing and inability to feed), and central nervous system involvement. COVID-19 symptoms in hospitalized children include fever, nausea/vomiting, cough, shortness of breath, and upper respiratory symptoms.",0.886,0.517,Yes,1.0,,86.5%
 What are the warning signs of a heart attack?,"Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness.","Pain or discomfort in the center of the chest, left arm or back, unusually rapid heartbeat, shortness of breath, nausea or fatigue.",0.872,0.412,Yes,1.0,,84.0%
-What is the recommended treatment for mild asthma attacks?,"Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers.","Reliever medications for as-needed symptom relief, and long-term daily use of low-dose ICS treatment to keep asthma well controlled.",0.449,0.231,Yes,1.0,,63.0%
+What is the recommended treatment for mild asthma attacks?,"Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers.","The recommended asthma reliever for mild asthma attacks is a rapid-acting bronchodilator, specifically SABA (short-acting beta2-agonist), given as needed when symptoms occur.",0.489,0.154,Yes,1.0,,63.3%
 What precautions should a diabetic patient take with their diet?,"Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly.","People with diabetes may choose to try to lose weight by changing their diet, they should consult with their health-care provider to define goals and reduce the likelihood of adverse effects, and may need more frequent blood glucose monitoring and adjustment of medications that may cause hypoglycemia, especially if pursuing low carbohydrate diets or intermittent diets.",0.564,0.222,Yes,1.0,,67.7%
