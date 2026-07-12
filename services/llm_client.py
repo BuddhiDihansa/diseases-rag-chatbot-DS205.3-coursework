@@ -39,6 +39,7 @@ class LLMClient:
         model: str = None,
         max_retries: int = 5,
         backoff_seconds: float = 3.0,
+        min_interval_seconds: float = 4.0,
     ):
         """
         max_retries: how many times to retry a failed API call before
@@ -48,18 +49,44 @@ class LLMClient:
         (exponential backoff) - e.g. 3s, 6s, 12s - so a rate-limited API
         gets progressively more breathing room instead of being hammered
         with identical requests immediately after failing.
+
+        min_interval_seconds: minimum time between ANY two outgoing
+        requests from this client, regardless of which agent triggered
+        them. A single pipeline.run() call can make 4-6 LLM calls
+        (symptom extraction, reasoning, verification, reflection
+        retries) in quick succession - without this throttle, those
+        calls alone can burst past the Groq free-tier rate limit before
+        the retry/backoff logic ever gets a chance to help. This is
+        shared across every agent because they all use the same
+        injected LLMClient instance.
         """
         self.api_key = api_key or os.getenv("LLM_API_KEY")
         self.model = model or os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self.max_retries = max_retries
         self.backoff_seconds = backoff_seconds
+        self.min_interval_seconds = min_interval_seconds
+        self._last_call_time = 0.0
 
         if not self.api_key:
             raise ConfigurationError(
                 "No API key found. Set LLM_API_KEY in your .env file "
                 "(copy .env.example to .env and fill it in)."
             )
+
+    def _throttle(self):
+        """
+        Blocks until at least min_interval_seconds have passed since the
+        last outgoing request from this client. Called once per generate()
+        call, before the retry loop, so consecutive agent calls in the
+        same pipeline run are naturally spaced out instead of firing
+        back-to-back and immediately tripping the rate limit.
+        """
+        elapsed = time.time() - self._last_call_time
+        wait = self.min_interval_seconds - elapsed
+        if wait > 0:
+            time.sleep(wait)
+        self._last_call_time = time.time()
 
     def generate(self, prompt: str, max_tokens: int = 1500) -> str:
         """
@@ -73,6 +100,7 @@ class LLMClient:
         NOT treat a returned string as a guaranteed success; if this
         method returns at all, it succeeded, otherwise it raises.
         """
+        self._throttle()
         last_error = None
 
         for attempt in range(1, self.max_retries + 1):

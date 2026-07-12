@@ -1,38 +1,26 @@
 """
 run_evaluation.py
 Member 4 - Evaluation & Report
-
-Purpose: Main script to run - loads ground truth questions, runs them
-through the full pipeline (Members 2 & 3's work), scores the answers,
-and outputs a results table. This is exactly what the report's
-"Empirical Evaluation" section (IV) needs, and what gets shown
-running in the demo video.
 """
 
 from dotenv import load_dotenv
 load_dotenv()
-# Without this, LLM_API_KEY (and any other .env values) are never loaded
-# into the environment when this file is run as its own entry point
-# (`python -m evaluation.run_evaluation`) - main.py loads .env itself,
-# but this script is a separate entry point and needs to do the same.
 
 import json
 import csv
+import time
 from evaluation.evaluator import Evaluator
 from services.pipeline import MedicalAIPipeline
+from utils.exceptions import LLMGenerationError
+
 
 def load_ground_truth(filepath: str = "evaluation/ground_truth.json") -> list:
-    """Load the ground truth Q&A pairs from JSON."""
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data["qa_pairs"]
 
 
 def run_full_evaluation():
-    """
-    Runs every ground truth question through the pipeline,
-    scores each answer, and prints/saves a results table.
-    """
     print("Loading ground truth dataset...")
     qa_pairs = load_ground_truth()
 
@@ -44,41 +32,67 @@ def run_full_evaluation():
 
     for pair in qa_pairs:
         print(f"\nRunning question: {pair['question']}")
-        pipeline_output = pipeline.run(pair["question"])
+
+        try:
+            pipeline_output = pipeline.run(pair["question"])
+        except LLMGenerationError as e:
+            print(f"[ERROR] Skipping this question - LLM call failed: {e}")
+            qa_results.append({
+                "question": pair["question"],
+                "expected_answer": pair["expected_answer"],
+                "system_answer": "[ERROR: LLM call failed - rate limited]",
+                "faithful": "Error",
+                "unsupported_claims": [str(e)],
+            })
+            print("[INFO] Cooling down for 30s before continuing...")
+            time.sleep(30)
+            continue
+
+        verification = pipeline_output.get("verification", {})
 
         qa_results.append({
             "question": pair["question"],
             "expected_answer": pair["expected_answer"],
-            "system_answer": pipeline_output["generated_answer"]
+            "system_answer": pipeline_output["generated_answer"],
+            "faithful": verification.get("faithful"),
+            "unsupported_claims": verification.get("unsupported_claims", []),
         })
 
     print("\nScoring all answers...")
     scored_results = evaluator.evaluate_batch(qa_results)
 
-    # print results table to console
-    print("\n" + "=" * 100)
-    print(f"{'Question':<40} {'Expected':<20} {'Score':<10}")
-    print("=" * 100)
+    print("\n" + "=" * 115)
+    print(f"{'Question':<35} {'Expected':<18} {'Score':<10} {'Faithful':<10} {'FaithScore':<10}")
+    print("=" * 115)
     for r in scored_results:
-        print(f"{r['question'][:38]:<40} {r['expected_answer'][:18]:<20} {r['final_score_percent']:<10}")
+        print(
+            f"{r['question'][:33]:<35} "
+            f"{r['expected_answer'][:16]:<18} "
+            f"{r['final_score_percent']:<10} "
+            f"{str(r['faithful']):<10} "
+            f"{str(r['faithfulness_score']):<10}"
+        )
 
     average_score = evaluator.calculate_average_score(scored_results)
-    print("\n" + "=" * 100)
-    print(f"OVERALL AVERAGE ACCURACY: {average_score}%")
-    print("=" * 100)
+    average_faithfulness = evaluator.calculate_average_faithfulness(scored_results)
 
-    # save to CSV for the report (Table format required in section IV)
+    print("\n" + "=" * 115)
+    print(f"OVERALL AVERAGE ACCURACY:     {average_score}%")
+    print(f"OVERALL AVERAGE FAITHFULNESS: {average_faithfulness}%")
+    print("=" * 115)
+
     save_results_csv(scored_results, "evaluation/results.csv")
 
-    return scored_results, average_score
+    return scored_results, average_score, average_faithfulness
 
 
 def save_results_csv(scored_results: list, output_path: str):
-    """Save results to CSV so they can be pasted into the report table."""
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
             "question", "expected_answer", "system_answer",
-            "semantic_similarity", "keyword_overlap", "final_score_percent"
+            "semantic_similarity", "keyword_overlap",
+            "faithful", "faithfulness_score", "unsupported_claims",
+            "final_score_percent",
         ])
         writer.writeheader()
         for row in scored_results:
