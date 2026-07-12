@@ -20,6 +20,7 @@ pytest
 
 # Evaluation (Member 4 - Evaluation & Report)
 # sentence-transformers already covers embedding-based scoring above
+nltk>=3.8
 
 # Optional: if using RAGAS for advanced faithfulness scoring
 # ragas==0.1.9
