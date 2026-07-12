@@ -40,7 +40,7 @@ class LLMClient:
         model: str = None,
         max_retries: int = 5,
         backoff_seconds: float = 3.0,
-        min_interval_seconds: float = 7.0,
+        min_interval_seconds: float = 10.0,
     ):
         """
         max_retries: how many times to retry a failed API call before
