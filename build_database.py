@@ -12,7 +12,7 @@ Run with: python build_database.py
 
 from ingestion.pdf_loader import PDFLoader
 from ingestion.text_cleaner import TextCleaner
-from ingestion.chunker import TextChunker
+from ingestion.chunker import TextChunker, is_boilerplate_chunk
 from retrieval.embedding_service import EmbeddingService
 from retrieval.vector_store import VectorStore
 from retrieval.hybrid_search import HybridSearch
@@ -49,6 +49,20 @@ def build_database():
     all_chunks = chunker.chunk_multiple_documents(cleaned_documents)
 
     print(f"\nTotal chunks created: {len(all_chunks)}")
+
+    # Drop front-matter/administrative chunks (title pages, committee/
+    # acknowledgements lists, forewords, ISBN/TOC pages) before they
+    # get embedded. These carry no clinical information but were
+    # observed outranking genuinely relevant clinical chunks in
+    # retrieval (e.g. a Director's foreword mentioning "dengue" several
+    # times outscored the actual DF/DHF symptom list for "What are the
+    # symptoms of Dengue fever?"). See chunker.py's is_boilerplate_chunk
+    # docstring for the detection heuristic.
+    before_count = len(all_chunks)
+    all_chunks = [c for c in all_chunks if not is_boilerplate_chunk(c.text)]
+    dropped = before_count - len(all_chunks)
+    print(f"Filtered out {dropped} boilerplate/front-matter chunks "
+          f"({before_count} -> {len(all_chunks)} chunks)")
 
     print("\n" + "=" * 60)
     print("STEP 4: Embedding chunks")

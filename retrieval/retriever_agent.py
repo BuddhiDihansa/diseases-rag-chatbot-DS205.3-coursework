@@ -13,6 +13,8 @@ from retrieval.embedding_service import EmbeddingService
 from retrieval.vector_store import VectorStore
 from retrieval.hybrid_search import HybridSearch
 from retrieval.reranker import CrossEncoderReranker
+from retrieval.query_expander import QueryExpander
+from services.llm_client import LLMClient
 
 
 class RetrieverAgent:
@@ -30,7 +32,11 @@ class RetrieverAgent:
                  vector_store: VectorStore = None,
                  hybrid_search: HybridSearch = None,
                  bm25_data_path: str = "data/bm25_data.pkl",
-                 use_reranker: bool = True):
+                 use_reranker: bool = True,
+                 use_mmr: bool = True,
+                 llm_client: LLMClient = None,
+                 use_query_expansion: bool = True,
+                 query_expander: QueryExpander = None):
         """
         Dependency Injection: all dependencies passed in via constructor.
         This makes the agent easy to test (can inject mock/fake objects)
@@ -42,6 +48,17 @@ class RetrieverAgent:
         cross-encoder model - useful for quick tests where retrieval
         precision doesn't matter, since the cross-encoder model adds a
         few seconds of load time on startup.
+
+        use_query_expansion: when True (default), retrieve()/
+        get_context_text() accept an expand_query flag that triggers
+        multi-query retrieval via QueryExpander (see query_expander.py).
+        Set to False to disable entirely (e.g. for fast unit tests that
+        don't want to make LLM calls).
+
+        use_mmr: when True (default), HybridSearch applies Maximal
+        Marginal Relevance to the final chunk selection so near-
+        duplicate chunks don't crowd out distinct relevant facts - see
+        HybridSearch's use_mmr docstring for the full rationale.
 
         On startup, this automatically loads the BM25 index from the
         file saved by build_database.py, so you don't need to manually
@@ -66,8 +83,16 @@ class RetrieverAgent:
         self.hybrid_search = hybrid_search or HybridSearch(
             vector_store=self.vector_store,
             embedding_service=self.embedding_service,
-            reranker=reranker
+            reranker=reranker,
+            use_mmr=use_mmr,
         )
+
+        self.use_query_expansion = use_query_expansion
+        self.query_expander = None
+        if use_query_expansion:
+            self.query_expander = query_expander or QueryExpander(
+                llm_client=llm_client or LLMClient()
+            )
 
         # auto-load BM25 index if build_database.py has already been run
         if os.path.exists(bm25_data_path):
@@ -81,16 +106,45 @@ class RetrieverAgent:
         else:
             print("[RetrieverAgent] WARNING: No BM25 data found. Run build_database.py first.")
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 5, expand_query: bool = False) -> List[Dict[str, Any]]:
         """
         Main method: takes a query (e.g. symptoms description),
         returns the top_k most relevant chunks with their source info.
 
+        expand_query: when True (and use_query_expansion was enabled
+        in the constructor), generates alternate phrasings of `query`
+        via QueryExpander and searches with each variant, merging
+        results by keeping each chunk's HIGHEST score across all
+        variants (rather than averaging, which would unfairly penalize
+        a chunk that's a perfect match for one phrasing but irrelevant
+        to the others). See query_expander.py for why this helps.
+
         This is what gets called in the pipeline (services/pipeline.py)
         and printed during the demo video to show "retrieved chunks".
         """
-        print(f"[RetrieverAgent] Searching for: '{query}'")
-        results = self.hybrid_search.search(query, top_k=top_k)
+        if expand_query and self.query_expander is not None:
+            queries = self.query_expander.expand(query)
+            if len(queries) > 1:
+                print(f"[RetrieverAgent] Expanded into {len(queries)} query "
+                      f"variants: {queries}")
+        else:
+            queries = [query]
+
+        if len(queries) == 1:
+            print(f"[RetrieverAgent] Searching for: '{query}'")
+            results = self.hybrid_search.search(query, top_k=top_k)
+        else:
+            # Multi-query retrieval: search once per variant, then merge
+            # by keeping the highest score seen for each chunk id.
+            merged: Dict[str, Dict[str, Any]] = {}
+            for q in queries:
+                print(f"[RetrieverAgent] Searching for: '{q}'")
+                variant_results = self.hybrid_search.search(q, top_k=top_k)
+                for r in variant_results:
+                    existing = merged.get(r["id"])
+                    if existing is None or r["score"] > existing["score"]:
+                        merged[r["id"]] = r
+            results = sorted(merged.values(), key=lambda x: x["score"], reverse=True)[:top_k]
 
         print(f"[RetrieverAgent] Retrieved {len(results)} chunks:")
         for r in results:
@@ -99,7 +153,7 @@ class RetrieverAgent:
 
         return results
 
-    def get_context_text(self, query: str, top_k: int = 5) -> str:
+    def get_context_text(self, query: str, top_k: int = 5, expand_query: bool = False) -> str:
         """
         Convenience method: returns retrieved chunks as a single
         combined text block, ready to feed into the LLM prompt.
@@ -109,7 +163,7 @@ class RetrieverAgent:
         document/page each piece of context came from - this is the
         "Traceability" requirement from the assessment brief.
         """
-        results = self.retrieve(query, top_k=top_k)
+        results = self.retrieve(query, top_k=top_k, expand_query=expand_query)
         context_blocks = []
         for r in results:
             citation = self._format_citation(r.get("metadata", {}))
