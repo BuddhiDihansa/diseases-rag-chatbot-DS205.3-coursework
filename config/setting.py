@@ -53,7 +53,7 @@ CHUNK_OVERLAP = 50
 # hybrid_search.py for the full tuning note.
 BM25_WEIGHT = 0.4
 VECTOR_WEIGHT = 0.6
-TOP_K_RESULTS = 5
+TOP_K_RESULTS = 4
 
 
 # ---------- Data Paths ----------

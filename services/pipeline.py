@@ -95,6 +95,18 @@ class MedicalAIPipeline:
 
         # Step 2
         print("\n--- STEP 2: Retrieval ---")
+        # top_k=7 is the safe default (tuned earlier - see below). For
+        # informational queries specifically, bump to 9: these already
+        # use query expansion (multi-query retrieval), and evaluation
+        # showed some needed facts (e.g. specific treatment steps
+        # referenced but not detailed in the top-scoring chunk) sit just
+        # past the top-7 cutoff. NOTE: top_k=10 was tried and reverted
+        # previously for causing noise on definitional queries (see the
+        # note below) - 9 is a smaller step in the same direction to
+        # reduce that regression risk. Re-check definitional questions
+        # (e.g. "What is diabetes?") after this change to confirm they
+        # didn't regress.
+        #
         # top_k default raised from 5 to 7 (see run() signature above).
         # Evaluation showed some correct facts sat just outside the
         # top-5 cutoff by a small margin (e.g. the primary Dengue
@@ -117,9 +129,10 @@ class MedicalAIPipeline:
         # are the ones that suffer from vocabulary mismatch against
         # formal guideline language ("contraindicated", "NSAID") - that
         # is where multi-query retrieval earns its extra LLM call.
+        effective_top_k = 9 if is_informational else top_k
         retrieved_context = self.retriever_agent.get_context_text(
             structured_symptoms,
-            top_k=top_k,
+            top_k=effective_top_k,
             expand_query=is_informational,
         )
 

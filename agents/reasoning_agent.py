@@ -11,17 +11,6 @@ from services.llm_client import LLMClient
 
 
 class ReasoningAgent(BaseAgent):
-    """
-    User Query
-        ↓
-    SymptomAgent
-        ↓
-    RetrieverAgent
-        ↓
-    ReasoningAgent
-        ↓
-    VerificationAgent
-    """
 
     def __init__(self, llm_client: LLMClient = None):
         super().__init__(name="ReasoningAgent")
@@ -34,37 +23,10 @@ class ReasoningAgent(BaseAgent):
         feedback: str = None,
         is_informational: bool = False,
     ) -> dict:
-        """
-        Generate a grounded answer using retrieved context only.
 
-        Args:
-            symptoms: Structured symptoms from SymptomAgent (or, for
-                informational queries, the original question text).
-            retrieved_context: Retrieved chunks from RetrieverAgent.
-            feedback: Optional verification feedback.
-            is_informational: True when the input was a general medical
-                question ("What is diabetes?") rather than a symptom
-                narration ("I have a fever"). SymptomAgent sets this via
-                its `last_is_informational` flag - see services/pipeline.py.
-                Forcing every answer into the "Possible Condition /
-                Recommended Actions / Things to Avoid" diagnostic-report
-                format made sense for symptom-triage queries, but was a
-                bad fit for informational questions: the model had to
-                awkwardly stretch a direct factual answer (e.g. "what are
-                asthma symptoms") into a diagnosis-shaped template, which
-                diluted the specific facts the ground-truth answer expects
-                and hurt both semantic-similarity and keyword-overlap
-                evaluation scores. Informational queries now get a prompt
-                that asks for a direct, concise factual answer instead.
-
-        Returns:
-            dict
-        """
         self.log("Generating grounded answer from retrieved context...")
 
-        # Safety check
         if not retrieved_context or not retrieved_context.strip():
-            self.log("No retrieved context available.")
             return {
                 "symptoms_input": symptoms,
                 "retrieved_context": "",
@@ -87,45 +49,76 @@ Use ONLY information explicitly supported by the retrieved context.
 Do NOT invent new medical facts.
 """
 
+        # -----------------------------------------
+        # INFORMATIONAL QUESTIONS
+        # -----------------------------------------
+
         if is_informational:
-            prompt = f"""
-You are a medical Retrieval-Augmented Generation (RAG) assistant.
 
-You MUST answer ONLY using the retrieved context below.
-
-Rules:
-- Do NOT use outside medical knowledge.
-- Do NOT guess.
-- Do NOT invent facts, figures, drug names, or statistics.
-- If the retrieved context is insufficient to answer, clearly say so.
-- Answer the question DIRECTLY and CONCISELY - state the specific
-  facts asked for (e.g. the actual symptoms, causes, or treatment
-  steps). Do NOT force the answer into a diagnosis/action-plan
-  format, and do NOT invent a "Possible Condition" if the question
-  did not describe a patient's symptoms.
-{feedback_block}
-Retrieved Context:
-{retrieved_context}
-
-Question:
-{symptoms}
-
-Answer:
-"""
-        else:
             prompt = f"""
 You are a medical Retrieval-Augmented Generation (RAG) assistant.
 
 You MUST answer ONLY using the retrieved context.
 
 Rules:
+
+- Use ONLY information from the retrieved context.
 - Do NOT use outside medical knowledge.
 - Do NOT guess.
-- Do NOT invent diseases.
-- Do NOT invent medications.
-- Do NOT invent treatments.
-- If the retrieved context is insufficient, clearly say so.
+- Do NOT invent facts, drug names, treatments, statistics, or explanations.
+- Answer ONLY what is asked.
+- Maximum 3 sentences.
+- Maximum 80 words.
+- Do NOT repeat information.
+- Do NOT add background information.
+- Do NOT add examples unless explicitly present in the context.
+
+Question-specific behavior:
+
+- If symptoms are requested, return symptoms only.
+- If causes are requested, return causes only.
+- If treatments are requested, return treatments only.
+- If precautions are requested, return precautions only.
+- If a definition is requested, return a one-sentence definition.
+
+If the answer is not present in the context, respond exactly:
+
+"The retrieved context does not contain sufficient information."
+
 {feedback_block}
+
+Retrieved Context:
+{retrieved_context}
+
+Question:
+{symptoms}
+
+Short Answer:
+"""
+
+        # -----------------------------------------
+        # SYMPTOM TRIAGE QUESTIONS
+        # -----------------------------------------
+
+        else:
+
+            prompt = f"""
+You are a medical Retrieval-Augmented Generation (RAG) assistant.
+
+You MUST answer ONLY using the retrieved context.
+
+Rules:
+
+- Use ONLY information from the retrieved context.
+- Do NOT use external medical knowledge.
+- Keep responses concise.
+- Avoid repetition.
+- Maximum 2 sentences per section.
+- Do NOT invent diagnoses.
+- If information is uncertain, clearly state that.
+
+{feedback_block}
+
 Retrieved Context:
 {retrieved_context}
 
@@ -148,22 +141,31 @@ Things to Avoid:
 """
 
         try:
-            raw_response = self.llm_client.generate(prompt)
+
+            raw_response = self.llm_client.generate(
+                prompt,
+                max_tokens=120
+            )
+
+            raw_response = raw_response.strip()
+
+            while "\n\n\n" in raw_response:
+                raw_response = raw_response.replace(
+                    "\n\n\n",
+                    "\n\n"
+                )
+
             self.log("Answer generated successfully.")
+
         except Exception as e:
+
             self.log(f"LLM generation failed: {e}")
+
             return {
                 "symptoms_input": symptoms,
                 "retrieved_context": retrieved_context,
                 "generated_answer":
                     f"Error: Could not generate response. ({e})",
-                # Explicit flag so downstream steps (VerificationAgent,
-                # the pipeline) can tell "the LLM call itself failed"
-                # apart from "the LLM generated a real answer" - without
-                # this, an error string with no medical claims in it gets
-                # judged 'faithful: Yes' by the verifier (nothing to
-                # contradict) and gets shown to the user as a verified,
-                # trustworthy answer, which it very much is not.
                 "generation_failed": True
             }
 
@@ -175,10 +177,8 @@ Things to Avoid:
         }
 
 
-# --------------------------------------------------------
-# Test this file independently
-# --------------------------------------------------------
 if __name__ == "__main__":
+
     agent = ReasoningAgent()
 
     fake_context = """
@@ -194,8 +194,9 @@ if warning signs develop.
 """
 
     result = agent.run(
-        symptoms="fever, headache, joint pain",
-        retrieved_context=fake_context
+        symptoms="What are the symptoms of dengue fever?",
+        retrieved_context=fake_context,
+        is_informational=True
     )
 
     print("\n------ Generated Answer ------\n")

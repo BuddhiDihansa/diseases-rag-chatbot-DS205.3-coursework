@@ -85,6 +85,82 @@ class Evaluator:
     def keyword_overlap_score(self, expected_answer: str, system_answer: str) -> float:
         return self.keyword_recall_score(expected_answer, system_answer)
 
+    def confusion_matrix_counts(
+        self, expected_answer: str, system_answer: str, corpus_vocabulary: set
+    ) -> Dict[str, int]:
+        """
+        Word-level confusion matrix for a single question, treating
+        "is this word part of the correct answer" as the binary label:
+
+        - TP: word IS in the expected answer AND the system DID say it
+              (a correct fact the system got right)
+        - FN: word IS in the expected answer but the system did NOT say it
+              (a correct fact the system missed)
+        - FP: word is NOT in the expected answer but the system said it
+              anyway (extra content beyond the reference answer)
+        - TN: word is NOT in the expected answer for THIS question, AND
+              the system correctly did not say it either. Since "not in
+              the expected answer" is trivially true for almost any
+              random word, TN is computed against corpus_vocabulary -
+              the set of all meaningful words that appear anywhere across
+              the whole ground-truth dataset (i.e. words that matter to
+              THIS evaluation, not the entire English language). This
+              keeps TN meaningful: it counts terms that are relevant to
+              OTHER questions in the test set but were correctly left out
+              of this answer, rather than crediting the system for every
+              word in the dictionary it didn't happen to use.
+
+        corpus_vocabulary: pass the union of tokenized words from every
+        reference_answer in the ground truth set (build this once per
+        evaluation run - see build_corpus_vocabulary()).
+        """
+        expected_words = self._tokenize(expected_answer)
+        system_words = self._tokenize(system_answer)
+
+        tp = len(expected_words & system_words)
+        fn = len(expected_words - system_words)
+        fp = len(system_words - expected_words)
+        tn = len((corpus_vocabulary - expected_words) - system_words)
+
+        return {"TP": tp, "FP": fp, "FN": fn, "TN": tn}
+
+    def build_corpus_vocabulary(self, all_reference_answers: List[str]) -> set:
+        """
+        Union of tokenized words across every reference_answer in the
+        ground truth set. Used as the shared vocabulary for the TN count
+        in confusion_matrix_counts() - see that method's docstring.
+        """
+        vocab = set()
+        for answer in all_reference_answers:
+            vocab |= self._tokenize(answer)
+        return vocab
+
+    def summarize_confusion_matrix(
+        self, per_question_counts: List[Dict[str, int]]
+    ) -> Dict[str, Any]:
+        """
+        Aggregates per-question TP/FP/FN/TN into dataset-wide totals and
+        the standard derived metrics (precision, recall, F1, accuracy).
+        """
+        total_tp = sum(c["TP"] for c in per_question_counts)
+        total_fp = sum(c["FP"] for c in per_question_counts)
+        total_fn = sum(c["FN"] for c in per_question_counts)
+        total_tn = sum(c["TN"] for c in per_question_counts)
+
+        precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) else 0.0
+        recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+        denom = total_tp + total_tn + total_fp + total_fn
+        accuracy = (total_tp + total_tn) / denom if denom else 0.0
+
+        return {
+            "TP": total_tp, "FP": total_fp, "FN": total_fn, "TN": total_tn,
+            "precision": round(precision, 3),
+            "recall": round(recall, 3),
+            "f1": round(f1, 3),
+            "accuracy": round(accuracy, 3),
+        }
+
     def faithfulness_score(self, faithful_verdict: str) -> float:
         return self.FAITHFUL_SCORE_MAP.get(faithful_verdict, 0.5)
 
