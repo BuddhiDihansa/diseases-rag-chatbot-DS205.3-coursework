@@ -184,6 +184,9 @@ class RetrieverAgent:
 
 # Example usage (for testing this file individually)
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+
     agent = RetrieverAgent()
     context = agent.get_context_text("fever and joint pain and headache")
     print("\n--- Retrieved Context ---")
