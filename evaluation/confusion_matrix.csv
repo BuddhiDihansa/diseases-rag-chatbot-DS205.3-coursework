@@ -1,0 +1,13 @@
+question,TP,FP,FN,TN
+What are the symptoms of Dengue fever?,6,6,9,140
+What is diabetes?,4,8,21,129
+What are the symptoms of asthma?,7,0,7,141
+What is chronic kidney disease?,7,0,37,111
+What are the common symptoms of migraine?,6,15,18,126
+What are the common symptoms of anaemia?,9,5,11,132
+What are the symptoms of influenza compared to COVID-19?,14,21,15,117
+What are the warning signs of a heart attack?,7,15,10,134
+What are the two most common causes of kidney disease?,14,0,10,131
+What precautions should a diabetic patient take with their diet?,6,26,12,130
+TOTAL,80,96,150,1291
+precision=0.455 recall=0.348 f1=0.394 accuracy=0.848,,,,

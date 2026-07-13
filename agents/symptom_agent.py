@@ -58,6 +58,22 @@ class SymptomAgent(BaseAgent):
     # phrase - treated as a safety-net signal on top of the markers above.
     _MAX_PLAUSIBLE_SYMPTOM_WORDS = 12
 
+    # If the user's message ITSELF is phrased as a general question about
+    # a disease (starts with a question word and asks what to avoid/how
+    # it's managed/etc.), it can never be a symptom narration - regardless
+    # of what the LLM returns. This is a deterministic safety net on top
+    # of the LLM classification above: temperature=0.0 reduces but does
+    # not eliminate run-to-run variance on borderline cases (e.g. the LLM
+    # occasionally inferring "fever" from the word "dengue" even though
+    # the user never said they have a fever), and this question shape is
+    # unambiguous enough to decide with a simple pattern match instead of
+    # trusting the LLM every time.
+    _INFORMATIONAL_QUESTION_MARKERS = (
+        "what should", "what precautions", "what is", "what are",
+        "how is", "how are", "how does", "how do", "when is", "when should",
+        "can ", "does ", "is it", "should someone",
+    )
+
     def run(self, user_input: str) -> str:
         """
         Takes raw user text, returns a cleaned/structured symptom query.
@@ -79,6 +95,18 @@ class SymptomAgent(BaseAgent):
         """
         self.log(f"Analyzing input: '{user_input}'")
 
+        stripped_lower = user_input.strip().lower()
+        if stripped_lower.startswith(self._INFORMATIONAL_QUESTION_MARKERS):
+            self.log(
+                "Input is phrased as a general question - skipping symptom "
+                "extraction and using the original question as the "
+                "retrieval query."
+            )
+            self.last_is_informational = True
+            structured_symptoms = user_input.strip()
+            self.log(f"Extracted symptoms: {structured_symptoms}")
+            return structured_symptoms
+
         prompt = f"""You are a medical symptom extraction assistant.
 Extract the key symptoms mentioned in the user's message below.
 Return ONLY a comma-separated list of symptoms, nothing else - no
@@ -99,6 +127,22 @@ Symptoms:
 Example 3
 User message: "What are the warning signs of a heart attack?"
 Symptoms:
+
+Example 4
+User message: "What should someone with dengue avoid?"
+Symptoms:
+
+Example 5
+User message: "What precautions should a diabetic patient take with their diet?"
+Symptoms:
+
+IMPORTANT: Questions asking what to avoid, what precautions to take, how
+a disease is managed/treated, or any other general question ABOUT a
+disease are NOT symptom narrations - they are informational questions,
+even if the disease name itself implies typical symptoms (e.g. "dengue"
+implies fever). Do NOT infer or guess symptoms from the disease's name.
+Only extract symptoms the user explicitly describes themselves
+experiencing (e.g. "I have a fever and headache").
 
 User message: "{user_input}"
 

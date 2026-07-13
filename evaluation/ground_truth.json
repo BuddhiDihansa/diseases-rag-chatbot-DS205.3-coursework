@@ -1,54 +1,74 @@
 {
   "qa_pairs": [
     {
-      "id": "q1",
+      "id": "GT001",
       "question": "What are the symptoms of Dengue fever?",
-      "expected_answer": "High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash."
+      "expected_agent": "symptom_agent",
+      "keywords": ["dengue", "fever", "headache", "joint pain", "rash"],
+      "reference_answer": "High fever, severe headache, pain behind the eyes, joint and muscle pain, nausea, vomiting, and skin rash."
     },
     {
-      "id": "q2",
+      "id": "GT002",
       "question": "What is diabetes?",
-      "expected_answer": "A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels."
+      "expected_agent": "reasoning_agent",
+      "keywords": ["diabetes", "insulin", "pancreas", "blood sugar"],
+      "reference_answer": "A chronic disease that occurs when the pancreas does not produce enough insulin or the body cannot effectively use the insulin it produces, leading to high blood sugar levels."
     },
     {
-      "id": "q3",
+      "id": "GT003",
       "question": "What are the symptoms of asthma?",
-      "expected_answer": "Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning."
+      "expected_agent": "symptom_agent",
+      "keywords": ["asthma", "wheezing", "shortness of breath", "cough"],
+      "reference_answer": "Shortness of breath, wheezing, chest tightness, and coughing, especially at night or early morning."
     },
     {
-      "id": "q4",
-      "question": "What should someone with dengue avoid?",
-      "expected_answer": "Avoid aspirin and ibuprofen (NSAIDs) as they can increase bleeding risk. Avoid mosquito bites and dehydration."
+      "id": "GT004",
+      "question": "What is chronic kidney disease?",
+      "expected_agent": "reasoning_agent",
+      "keywords": ["kidney", "damaged", "filter", "stages", "kidney failure"],
+      "reference_answer": "Chronic kidney disease means the kidneys are damaged and unable to filter blood properly or perform their other functions as well as they should. It develops slowly over time in stages, and while early stages often have no symptoms, if the disease worsens it can lead to kidney failure requiring dialysis or a kidney transplant."
     },
     {
-      "id": "q5",
+      "id": "GT005",
       "question": "What are the common symptoms of migraine?",
-      "expected_answer": "Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances."
+      "expected_agent": "symptom_agent",
+      "keywords": ["migraine", "throbbing pain", "nausea", "photophobia", "phonophobia"],
+      "reference_answer": "Moderate to severe throbbing pain, usually on one side of the head, along with nausea, vomiting, sensitivity to light (photophobia), sensitivity to noise (phonophobia), and visual disturbances."
     },
     {
-      "id": "q6",
-      "question": "How is hypertension managed?",
-      "expected_answer": "Through lifestyle changes such as reduced salt intake, regular exercise, and medication such as ACE inhibitors or diuretics as prescribed by a doctor."
+      "id": "GT006",
+      "question": "What are the common symptoms of anaemia?",
+      "expected_agent": "symptom_agent",
+      "keywords": ["anaemia", "fatigue", "pale skin", "shortness of breath", "dizziness"],
+      "reference_answer": "Common symptoms of anaemia include fatigue and weakness, pale skin, shortness of breath, dizziness or lightheadedness, cold hands and feet, and irregular heartbeat."
     },
     {
-      "id": "q7",
+      "id": "GT007",
       "question": "What are the symptoms of influenza compared to COVID-19?",
-      "expected_answer": "Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza."
+      "expected_agent": "symptom_agent",
+      "keywords": ["influenza", "COVID-19", "fever", "loss of taste", "respiratory"],
+      "reference_answer": "Both can cause fever, cough, sore throat, fatigue, and body aches, but COVID-19 more commonly causes loss of taste or smell, and can lead to more severe respiratory complications than typical influenza."
     },
     {
-      "id": "q8",
+      "id": "GT008",
       "question": "What are the warning signs of a heart attack?",
-      "expected_answer": "Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness."
+      "expected_agent": "symptom_agent",
+      "keywords": ["heart attack", "chest pain", "shortness of breath", "cold sweat"],
+      "reference_answer": "Chest pain or discomfort, shortness of breath, pain radiating to the arm or jaw, cold sweat, nausea, and lightheadedness."
     },
     {
-      "id": "q9",
-      "question": "What is the recommended treatment for mild asthma attacks?",
-      "expected_answer": "Use of a fast-acting (rescue) inhaler such as albuterol, and avoiding known triggers."
+      "id": "GT009",
+      "question": "What are the two most common causes of kidney disease?",
+      "expected_agent": "reasoning_agent",
+      "keywords": ["kidney disease", "diabetes", "high blood pressure", "causes"],
+      "reference_answer": "The two most common causes of kidney disease are diabetes, which causes high blood sugar that damages organs including the kidneys, and high blood pressure, which damages blood vessels when not controlled."
     },
     {
-      "id": "q10",
+      "id": "GT010",
       "question": "What precautions should a diabetic patient take with their diet?",
-      "expected_answer": "Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly."
+      "expected_agent": "reasoning_agent",
+      "keywords": ["diabetes", "diet", "sugary foods", "fiber", "blood sugar"],
+      "reference_answer": "Limit intake of sugary foods and refined carbohydrates, eat balanced meals with fiber, and monitor blood sugar levels regularly."
     }
   ]
 }

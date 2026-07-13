@@ -32,7 +32,7 @@ class QueryExpander:
     retrieval. See module docstring above for the motivation.
     """
 
-    def __init__(self, llm_client: LLMClient = None, num_variants: int = 2):
+    def __init__(self, llm_client: LLMClient = None, num_variants: int = 1):
         self.llm_client = llm_client or LLMClient()
         self.num_variants = num_variants
 
@@ -50,8 +50,8 @@ class QueryExpander:
         """
         prompt = f"""You are a medical search query rewriting assistant.
 
-Given a user's medical question, rewrite it as {self.num_variants} alternative
-search queries that a formal clinical guideline document would more
+Given a user's medical question, generate ONLY ONE alternative
+clinical search query using medical terminology. that a formal clinical guideline document would more
 likely use similar vocabulary to. Prefer clinical/technical terms over
 layperson terms where a natural equivalent exists - for example:
 - "avoid" -> "contraindicated", "should not take"
@@ -67,7 +67,7 @@ Original question: "{query}"
 Rewritten queries:"""
 
         try:
-            raw_output = self.llm_client.generate(prompt, max_tokens=150)
+            raw_output = self.llm_client.generate(prompt, max_tokens=60)
             variants = [
                 line.strip("-•*0123456789. \t")
                 for line in raw_output.strip().split("\n")
