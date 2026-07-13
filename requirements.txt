@@ -1,0 +1,26 @@
+# Core dependencies for MediGuide LK - Medical AI Multi-Agent RAG System
+
+# PDF processing (Member 1 - Data Engineering)
+pymupdf>=1.24.0
+
+# Embeddings & Vector Search (Member 2 - Retrieval & Vector DB)
+numpy>=1.24.0
+sentence-transformers==3.0.1
+faiss-cpu
+rank-bm25==0.2.2
+
+# LLM API calls (Member 3 - Agent Logic)
+requests==2.32.3
+
+# Environment variable management (all members)
+python-dotenv==1.0.1
+
+# Testing (all members)
+pytest
+
+# Evaluation (Member 4 - Evaluation & Report)
+# sentence-transformers already covers embedding-based scoring above
+nltk>=3.8
+
+# Optional: if using RAGAS for advanced faithfulness scoring
+# ragas==0.1.9

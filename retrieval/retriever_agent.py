@@ -1,0 +1,193 @@
+"""
+retriever_agent.py
+Member 2 - Retrieval & Vector Database
+
+Purpose: The Retrieval Agent used in the multi-agent pipeline.
+This is what Member 3's agents will call to get relevant chunks.
+"""
+
+import os
+import pickle
+from typing import List, Dict, Any
+from retrieval.embedding_service import EmbeddingService
+from retrieval.vector_store import VectorStore
+from retrieval.hybrid_search import HybridSearch
+from retrieval.reranker import CrossEncoderReranker
+from retrieval.query_expander import QueryExpander
+from services.llm_client import LLMClient
+
+
+class RetrieverAgent:
+    """
+    The Retrieval Agent in the multi-agent architecture:
+
+    User Query -> Symptom Agent -> [RetrieverAgent] -> Reasoning Agent -> Verification Agent
+
+    This agent's only job: given a query, return the most relevant
+    chunks of information from the vector store. It does NOT generate
+    answers itself - that's the Reasoning Agent's job (Member 3).
+    """
+
+    def __init__(self, embedding_service: EmbeddingService = None,
+                 vector_store: VectorStore = None,
+                 hybrid_search: HybridSearch = None,
+                 bm25_data_path: str = "data/bm25_data.pkl",
+                 use_reranker: bool = True,
+                 use_mmr: bool = True,
+                 llm_client: LLMClient = None,
+                 use_query_expansion: bool = True,
+                 query_expander: QueryExpander = None):
+        """
+        Dependency Injection: all dependencies passed in via constructor.
+        This makes the agent easy to test (can inject mock/fake objects)
+        and easy to swap implementations later.
+
+        use_reranker: when True (default), builds a CrossEncoderReranker
+        and wires it into HybridSearch for a higher-precision second pass
+        (see reranker.py for why). Set to False to skip loading the
+        cross-encoder model - useful for quick tests where retrieval
+        precision doesn't matter, since the cross-encoder model adds a
+        few seconds of load time on startup.
+
+        use_query_expansion: when True (default), retrieve()/
+        get_context_text() accept an expand_query flag that triggers
+        multi-query retrieval via QueryExpander (see query_expander.py).
+        Set to False to disable entirely (e.g. for fast unit tests that
+        don't want to make LLM calls).
+
+        use_mmr: when True (default), HybridSearch applies Maximal
+        Marginal Relevance to the final chunk selection so near-
+        duplicate chunks don't crowd out distinct relevant facts - see
+        HybridSearch's use_mmr docstring for the full rationale.
+
+        On startup, this automatically loads the BM25 index from the
+        file saved by build_database.py, so you don't need to manually
+        rebuild it every time the program runs.
+        """
+        self.embedding_service = embedding_service or EmbeddingService()
+        self.vector_store = vector_store or VectorStore()
+
+        reranker = None
+        if use_reranker and hybrid_search is None:
+            try:
+                reranker = CrossEncoderReranker()
+            except Exception as e:
+                # Fail gracefully: if the cross-encoder model can't be
+                # downloaded/loaded (e.g. no internet on first run), fall
+                # back to plain hybrid search instead of crashing the
+                # whole system over an optional accuracy boost.
+                print(f"[RetrieverAgent] WARNING: Could not load reranker ({e}). "
+                      f"Continuing without re-ranking.")
+                reranker = None
+
+        self.hybrid_search = hybrid_search or HybridSearch(
+            vector_store=self.vector_store,
+            embedding_service=self.embedding_service,
+            reranker=reranker,
+            use_mmr=use_mmr,
+        )
+
+        self.use_query_expansion = use_query_expansion
+        self.query_expander = None
+        if use_query_expansion:
+            self.query_expander = query_expander or QueryExpander(
+                llm_client=llm_client or LLMClient()
+            )
+
+        # auto-load BM25 index if build_database.py has already been run
+        if os.path.exists(bm25_data_path):
+            with open(bm25_data_path, "rb") as f:
+                bm25_data = pickle.load(f)
+            # metadatas/index_texts keys may be missing in older pickles
+            # built before these updates - fall back gracefully instead of
+            # crashing.
+            metadatas = bm25_data.get("metadatas")
+            index_texts = bm25_data.get("index_texts")  # context-prefixed text for keyword matching
+            self.hybrid_search.build_bm25_index(
+                bm25_data["chunk_ids"], bm25_data["texts"], metadatas, index_texts=index_texts
+            )
+            print(f"[RetrieverAgent] Loaded BM25 index with {len(bm25_data['texts'])} chunks.")
+        else:
+            print("[RetrieverAgent] WARNING: No BM25 data found. Run build_database.py first.")
+
+    def retrieve(self, query: str, top_k: int = 5, expand_query: bool = False) -> List[Dict[str, Any]]:
+        """
+        Main method: takes a query (e.g. symptoms description),
+        returns the top_k most relevant chunks with their source info.
+
+        expand_query: when True (and use_query_expansion was enabled
+        in the constructor), generates alternate phrasings of `query`
+        via QueryExpander and searches with each variant, merging
+        results by keeping each chunk's HIGHEST score across all
+        variants (rather than averaging, which would unfairly penalize
+        a chunk that's a perfect match for one phrasing but irrelevant
+        to the others). See query_expander.py for why this helps.
+
+        This is what gets called in the pipeline (services/pipeline.py)
+        and printed during the demo video to show "retrieved chunks".
+        """
+        if expand_query and self.query_expander is not None:
+            queries = self.query_expander.expand(query)
+            if len(queries) > 1:
+                print(f"[RetrieverAgent] Expanded into {len(queries)} query "
+                      f"variants: {queries}")
+        else:
+            queries = [query]
+
+        if len(queries) == 1:
+            print(f"[RetrieverAgent] Searching for: '{query}'")
+            results = self.hybrid_search.search(query, top_k=top_k)
+        else:
+            # Multi-query retrieval: search once per variant, then merge
+            # by keeping the highest score seen for each chunk id.
+            merged: Dict[str, Dict[str, Any]] = {}
+            for q in queries:
+                print(f"[RetrieverAgent] Searching for: '{q}'")
+                variant_results = self.hybrid_search.search(q, top_k=top_k)
+                for r in variant_results:
+                    existing = merged.get(r["id"])
+                    if existing is None or r["score"] > existing["score"]:
+                        merged[r["id"]] = r
+            results = sorted(merged.values(), key=lambda x: x["score"], reverse=True)[:top_k]
+
+        print(f"[RetrieverAgent] Retrieved {len(results)} chunks:")
+        for r in results:
+            citation = self._format_citation(r.get("metadata", {}))
+            print(f"  - {r['id']} (score: {r['score']:.3f}) [{citation}]")
+
+        return results
+
+    def get_context_text(self, query: str, top_k: int = 5, expand_query: bool = False) -> str:
+        """
+        Convenience method: returns retrieved chunks as a single
+        combined text block, ready to feed into the LLM prompt.
+
+        Each chunk is prefixed with a [Source: file.pdf, page N] tag so
+        the LLM (and anyone reading the trace) can see exactly which
+        document/page each piece of context came from - this is the
+        "Traceability" requirement from the assessment brief.
+        """
+        results = self.retrieve(query, top_k=top_k, expand_query=expand_query)
+        context_blocks = []
+        for r in results:
+            citation = self._format_citation(r.get("metadata", {}))
+            context_blocks.append(f"[Source: {citation}]\n{r['text']}")
+        return "\n\n".join(context_blocks)
+
+    @staticmethod
+    def _format_citation(metadata: Dict[str, Any]) -> str:
+        """Builds a human-readable 'file.pdf, page 3' citation string from chunk metadata."""
+        source = metadata.get("source_document", "unknown source")
+        page = metadata.get("page_number")
+        return f"{source}, page {page}" if page else source
+
+
+# Example usage (for testing this file individually)
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    agent = RetrieverAgent()
+    context = agent.get_context_text("fever and joint pain and headache")
+    print("\n--- Retrieved Context ---")
+    print(context)
