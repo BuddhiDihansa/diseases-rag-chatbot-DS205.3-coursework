@@ -73,7 +73,7 @@ class TestGroundTruthFile:
             data = json.load(f)
         for pair in data["qa_pairs"]:
             assert "question" in pair
-            assert "expected_answer" in pair
+            assert "reference_answer" in pair
 
 
 if __name__ == "__main__":
