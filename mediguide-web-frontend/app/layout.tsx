@@ -36,10 +36,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} font-body antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+  try {
+    const stored = localStorage.getItem('mediguide-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = stored === 'light' || stored === 'dark' ? stored : (prefersDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.dataset.theme = theme;
+  } catch (e) {}
+})();`,
+          }}
+        />
         {children}
       </body>
     </html>
