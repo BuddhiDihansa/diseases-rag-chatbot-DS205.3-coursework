@@ -4,6 +4,7 @@ import type { Config } from "tailwindcss";
 // See README.md "Design notes" section for the reasoning behind this
 // palette/type system.
 const config: Config = {
+  darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -24,6 +25,22 @@ const config: Config = {
         verified: {
           DEFAULT: "#2E7D53",
           soft: "#E3EFE4",
+        },
+        coral: {
+          DEFAULT: "#E35D4F",
+          soft: "#F8E2DE",
+        },
+        violet: {
+          DEFAULT: "#7857E5",
+          soft: "#ECE7FD",
+        },
+        sky: {
+          DEFAULT: "#2F8FE8",
+          soft: "#E4F1FD",
+        },
+        gold: {
+          DEFAULT: "#C58B1D",
+          soft: "#F7EFD6",
         },
         hairline: "#DAD4C4",
       },
@@ -48,11 +65,16 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        typewriter: {
+          "0%": { width: "0" },
+          "100%": { width: "100%" },
+        },
       },
       animation: {
         pulseline: "pulseline 1.8s linear infinite",
         blink: "blink 1.4s ease-in-out infinite",
         rise: "rise 0.35s ease-out both",
+        typewriter: "typewriter 0.9s steps(30, end) both",
       },
     },
   },

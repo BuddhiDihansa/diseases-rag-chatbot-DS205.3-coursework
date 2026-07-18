@@ -18,6 +18,10 @@ python-dotenv==1.0.1
 # Testing (all members)
 pytest
 
+# HTTP API for the Next.js frontend (mediguide-web)
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
 # Evaluation (Member 4 - Evaluation & Report)
 # sentence-transformers already covers embedding-based scoring above
 nltk>=3.8

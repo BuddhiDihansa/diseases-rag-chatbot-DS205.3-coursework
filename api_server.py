@@ -18,6 +18,18 @@ Endpoints:
 """
 
 import os
+
+# Must run before any `transformers`/`sentence_transformers` import
+# (pulled in indirectly via services.pipeline below). Some environments
+# have a `tensorflow` package installed alongside `transformers`, which
+# makes transformers try to load its TensorFlow/Keras integration on
+# startup - and crash if the installed Keras is Keras 3 (transformers
+# only supports the legacy tf-keras). sentence-transformers only ever
+# uses the PyTorch backend here, so TensorFlow isn't needed at all -
+# this just stops transformers from probing for it.
+os.environ.setdefault("USE_TF", "0")
+os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
+
 import re
 import time
 from typing import List, Optional

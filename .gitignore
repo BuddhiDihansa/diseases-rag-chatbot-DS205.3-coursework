@@ -4,9 +4,14 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.env.local
 chroma_db/
 .DS_Store
 Thumbs.db
+
+# Frontend build artifacts and dependencies
+mediguide-web-frontend/node_modules/
+mediguide-web-frontend/.next/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
