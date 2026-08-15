@@ -3,25 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { askMediGuide, ApiError, type ChatResponse } from "@/lib/api";
+import { askMediGuide, ApiError } from "@/lib/api";
+import type { ChatMessage, ChatSession } from "@/lib/chatStore";
+import { uid } from "@/lib/chatStore";
 import CitationCard from "./CitationCard";
 import PulseDivider from "./PulseDivider";
 import VitalsBadge from "./VitalsBadge";
+import { MenuIcon } from "./icons";
 
 type Theme = "light" | "dark";
+type Message = ChatMessage;
 
-type Message =
-  | { role: "user"; content: string; id: string }
-  | {
-      role: "assistant";
-      content: string;
-      id: string;
-      meta?: ChatResponse;
-      error?: string;
-    };
-
-const STORAGE_KEY = "mediguide-chat-history";
-const THEME_KEY = "mediguide-theme";
 const TYPE_SPEED = 18;
 
 const STEP_LABELS = [
@@ -37,70 +29,37 @@ const SUGGESTIONS = [
   "What are the warning signs of a heart attack?",
 ];
 
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function Chat({
+  session,
+  onMessagesChange,
+  theme,
+  onToggleTheme,
+  onOpenSidebar,
+}: {
+  session: ChatSession;
+  onMessagesChange: (messages: Message[]) => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onOpenSidebar: () => void;
+}) {
+  const messages = session.messages;
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [activeTraceId, setActiveTraceId] = useState<string | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-  const [theme, setTheme] = useState<Theme>("light");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      const storedTheme = localStorage.getItem(THEME_KEY);
-      const storedMessages = localStorage.getItem(STORAGE_KEY);
-
-      if (storedTheme === "dark" || storedTheme === "light") {
-        setTheme(storedTheme);
-        document.documentElement.classList.toggle("dark", storedTheme === "dark");
-      }
-
-      if (storedMessages) {
-        const parsed = JSON.parse(storedMessages) as Message[];
-        setMessages(parsed);
-        const lastAssistant = [...parsed].reverse().find((message) => message.role === "assistant");
-        if (lastAssistant) {
-          setActiveTraceId(lastAssistant.id);
-        }
-      }
-    } catch {
-      // Ignore malformed persisted state.
-    } finally {
-      setHydrated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch {
-      // Ignore persistence failures.
-    }
-  }, [messages, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-      document.documentElement.classList.toggle("dark", theme === "dark");
-      document.documentElement.dataset.theme = theme;
-    } catch {
-      // Ignore persistence failures.
-    }
-  }, [theme, hydrated]);
+    const lastAssistant = [...session.messages].reverse().find((m) => m.role === "assistant");
+    setActiveTraceId(lastAssistant ? lastAssistant.id : null);
+    setInput("");
+  }, [session.id]);
 
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
     container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages.length, loading, session.id]);
 
   useEffect(() => {
     if (!loading) return;
@@ -116,27 +75,24 @@ export default function Chat() {
     if (!trimmed || loading) return;
 
     const userMessage: Message = { role: "user", content: trimmed, id: uid() };
-    setMessages((current) => [...current, userMessage]);
+    onMessagesChange([...messages, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
       const result = await askMediGuide(trimmed);
       const assistantId = uid();
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: result.answer,
-          id: assistantId,
-          meta: result,
-        },
+      onMessagesChange([
+        ...messages,
+        userMessage,
+        { role: "assistant", content: result.answer, id: assistantId, meta: result },
       ]);
       setActiveTraceId(assistantId);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Something went wrong.";
-      setMessages((current) => [
-        ...current,
+      onMessagesChange([
+        ...messages,
+        userMessage,
         { role: "assistant", content: "", id: uid(), error: message },
       ]);
     } finally {
@@ -144,18 +100,9 @@ export default function Chat() {
     }
   }
 
-  function toggleTheme() {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  }
-
   function clearChat() {
-    setMessages([]);
+    onMessagesChange([]);
     setActiveTraceId(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Ignore persistence failures.
-    }
   }
 
   const activeTrace = [...messages].reverse().find(
@@ -164,15 +111,23 @@ export default function Chat() {
   );
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-6 pt-5 sm:px-6 lg:px-8">
+    <div className="relative flex min-h-screen flex-1 flex-col px-4 pb-6 pt-5 sm:px-6 lg:px-8">
       <DecorativeBackground />
 
       <div className="relative flex min-h-0 flex-1 flex-col gap-5">
-        <Header theme={theme} onToggleTheme={toggleTheme} onClearChat={clearChat} />
+        <Header
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onClearChat={clearChat}
+          onOpenSidebar={onOpenSidebar}
+        />
         <PulseDivider active={loading} className="-mt-1" />
 
         <section className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[1.45fr_0.95fr]">
-          <div className="aurora-band glass-card glow-accent flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-white/40 shadow-[0_24px_80px_rgba(22,38,43,0.12)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+          <div
+            key={session.id}
+            className="aurora-band glass-card glow-accent flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-white/40 shadow-[0_24px_80px_rgba(22,38,43,0.12)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
+          >
             <div className="border-b border-white/30 px-5 py-4 dark:border-white/10">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -224,14 +179,14 @@ export default function Chat() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-sky dark:text-sky/70">
-                    Session memory
+                    This conversation
                   </p>
-                  <h2 className="mt-1 text-lg font-semibold text-ink dark:text-white">
-                    Resume the conversation anytime
+                  <h2 className="mt-1 truncate text-lg font-semibold text-ink dark:text-white">
+                    {session.title}
                   </h2>
                 </div>
-                <span className="rounded-full border border-violet/20 bg-violet-soft px-3 py-1 text-[11px] font-mono uppercase tracking-[0.22em] text-violet dark:border-violet/30 dark:bg-violet/15 dark:text-violet/90">
-                  localStorage
+                <span className="shrink-0 rounded-full border border-violet/20 bg-violet-soft px-3 py-1 text-[11px] font-mono uppercase tracking-[0.22em] text-violet dark:border-violet/30 dark:bg-violet/15 dark:text-violet/90">
+                  saved
                 </span>
               </div>
 
@@ -239,32 +194,6 @@ export default function Chat() {
                 <InfoChip label="Theme" value={theme === "dark" ? "Dark" : "Light"} />
                 <InfoChip label="Messages" value={`${messages.length}`} />
                 <InfoChip label="Trace" value={activeTrace ? "Selected" : "Idle"} />
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[28px] border border-black/5 bg-gradient-to-br from-coral-soft via-violet-soft to-sky-soft p-5 shadow-[0_18px_60px_rgba(22,38,43,0.08)] backdrop-blur-xl dark:border-white/10 dark:from-coral/10 dark:via-violet/10 dark:to-sky/10 dark:shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-              <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-ink-soft/60 dark:text-white/45">
-                Design system
-              </p>
-              <h3 className="mt-2 text-xl font-semibold text-ink dark:text-white">
-                Bold, colorful, and easy to scan.
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-ink-soft dark:text-white/70">
-                The page now uses a structured two-column layout, stronger spacing rhythm, and vibrant accent panels so the content reads like a premium product instead of a plain chat box.
-              </p>
-              <div className="mt-4 grid gap-2">
-                {[
-                  "Hero framing with richer color atmosphere",
-                  "Conversation column anchored to a clear workflow",
-                  "Trace panel and session summary kept in a fixed rail",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-2xl border border-white/40 bg-white/80 px-3 py-2 text-sm text-ink-soft shadow-[0_10px_24px_rgba(22,38,43,0.05)] dark:border-white/10 dark:bg-white/5 dark:text-white/70"
-                  >
-                    {item}
-                  </div>
-                ))}
               </div>
             </div>
 
@@ -293,23 +222,34 @@ function Header({
   theme,
   onToggleTheme,
   onClearChat,
+  onOpenSidebar,
 }: {
   theme: Theme;
   onToggleTheme: () => void;
   onClearChat: () => void;
+  onOpenSidebar: () => void;
 }) {
   return (
     <header className="flex flex-wrap items-center justify-between gap-3">
-      <div className="max-w-2xl">
-        <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-violet dark:text-violet/70">
-          MediGuide LK
-        </p>
-        <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight text-ink dark:text-white sm:text-5xl">
-          A colorful medical chat interface with grounded answers.
-        </h1>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-ink-soft dark:text-white/70 sm:text-[15px]">
-          Type naturally, review the retrieved evidence, and keep every conversation persisted locally.
-        </p>
+      <div className="flex max-w-2xl items-start gap-3">
+        <button
+          onClick={onOpenSidebar}
+          aria-label="Open chat history"
+          className="mt-1 shrink-0 rounded-xl border border-white/40 bg-white/70 p-2 text-ink-soft transition hover:bg-white/90 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10 lg:hidden"
+        >
+          <MenuIcon className="h-4 w-4" />
+        </button>
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-violet dark:text-violet/70">
+            MediGuide LK
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight text-ink dark:text-white sm:text-5xl">
+            A colorful medical chat interface with grounded answers.
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-ink-soft dark:text-white/70 sm:text-[15px]">
+            Type naturally, review the retrieved evidence, and keep every conversation saved to its own thread.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -323,7 +263,7 @@ function Header({
           onClick={onClearChat}
           className="rounded-full border border-white/40 bg-gradient-to-r from-coral-soft to-gold-soft px-4 py-2 text-sm font-medium text-ink transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(227,93,79,0.18)] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
         >
-          Clear chat
+          Clear this chat
         </button>
       </div>
     </header>
@@ -332,13 +272,13 @@ function Header({
 
 function EmptyState({ onPick }: { onPick: (q: string) => void }) {
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center gap-6 rounded-[24px] border border-white/40 bg-gradient-to-br from-coral-soft/80 via-violet-soft/70 to-sky-soft/70 px-5 py-10 text-center shadow-[0_20px_50px_rgba(120,87,229,0.12)] dark:border-white/10 dark:from-coral/10 dark:via-violet/10 dark:to-sky/10">
+    <div className="flex min-h-[360px] animate-rise flex-col items-center justify-center gap-6 rounded-[24px] border border-white/40 bg-gradient-to-br from-coral-soft/80 via-violet-soft/70 to-sky-soft/70 px-5 py-10 text-center shadow-[0_20px_50px_rgba(120,87,229,0.12)] dark:border-white/10 dark:from-coral/10 dark:via-violet/10 dark:to-sky/10">
       <div className="max-w-2xl space-y-3">
         <p className="font-display text-2xl italic text-ink dark:text-white sm:text-3xl">
           Describe how you feel, or ask about a condition. I’ll answer only from verified guideline documents.
         </p>
         <p className="text-sm leading-6 text-ink-soft dark:text-white/65">
-          This interface keeps the conversation history locally, animates new responses, and renders rich markdown for clinical summaries.
+          Each conversation is saved as its own thread in the sidebar, so you can pick up where you left off.
         </p>
       </div>
       <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-3">
@@ -491,7 +431,7 @@ function Composer({
           <button
             onClick={onSend}
             disabled={disabled || !input.trim()}
-            className="shrink-0 rounded-2xl bg-gradient-to-br from-coral via-violet to-sky px-4 py-2.5 text-[13px] font-semibold text-paper shadow-[0_12px_28px_rgba(120,87,229,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+            className="shrink-0 rounded-2xl bg-gradient-to-br from-coral via-violet to-sky px-4 py-2.5 text-[13px] font-semibold text-paper shadow-[0_12px_28px_rgba(120,87,229,0.25)] transition hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Send
           </button>
