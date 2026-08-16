@@ -1,39 +1,30 @@
 "use client";
 
-type PulseDividerProps = {
-  active?: boolean;
-  className?: string;
-};
-
 /**
- * The page's signature element: a clinical vitals-monitor trace line.
- * Idle: a calm, static waveform hairline that reads as a EKG strip
- * motif tying back to "reading vital signs from a document" - the
- * whole premise of the app.
- * Active (a request is in flight): the line animates left-to-right,
- * doubling as the loading indicator instead of a generic spinner.
+ * The app's signature motion element: a sticky, full-width vitals-monitor
+ * trace bar pinned to the very top of the content area. It is always
+ * mounted and always animating (slow trace at idle), so the page feels
+ * "alive" continuously - not just during a request. While a request is
+ * in flight it switches to a faster, brighter trace, doubling as the
+ * loading indicator instead of a generic spinner.
  */
-export default function PulseDivider({
-  active = false,
-  className = "",
-}: PulseDividerProps) {
+export default function PulseDivider({ active = false }: { active?: boolean }) {
   return (
-    <div className={`w-full overflow-hidden ${className}`} aria-hidden="true">
+    <div className="signal-bar">
       <svg
-        viewBox="0 0 480 32"
+        viewBox="0 0 960 34"
         preserveAspectRatio="none"
-        className="h-6 w-full text-teal/70"
+        className={`h-full w-full ${active ? "text-primary" : "text-primary/50"}`}
       >
         <path
-          d="M0 16 H150 L162 4 L174 28 L186 16 H210 L222 8 L234 24 L246 16 H480"
+          d="M0 17 H360 L378 4 L396 30 L414 17 H460 L478 8 L496 26 L514 17 H960"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeDasharray="240"
-          className={active ? "animate-pulseline" : ""}
-          style={!active ? { opacity: 0.35 } : undefined}
+          className={active ? "animate-pulseline" : "animate-pulseline-idle"}
         />
       </svg>
     </div>

@@ -115,13 +115,11 @@ export default function Home() {
   const activeSession = sessions.find((s) => s.id === activeId) ?? sessions[0];
 
   if (!hydrated || !activeSession) {
-    return <main className="min-h-screen bg-paper dark:bg-[#071114]" />;
+    return <main className="min-h-screen bg-paper dark:bg-navy" />;
   }
 
   return (
-    <main className="relative flex min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-teal/10 via-transparent to-transparent dark:from-teal/20" />
-
+    <main className="relative flex min-h-screen overflow-hidden bg-paper dark:bg-navy">
       <Sidebar
         sessions={sessions}
         activeId={activeSession.id}

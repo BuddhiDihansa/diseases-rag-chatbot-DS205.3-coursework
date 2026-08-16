@@ -10,177 +10,117 @@ html.dark {
   color-scheme: dark;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
-  min-height: 100vh;
-  background-color: #f5f3ee;
-  background-image:
-    radial-gradient(circle at top left, rgba(14, 111, 99, 0.2), transparent 28%),
-    radial-gradient(circle at 86% 14%, rgba(120, 87, 229, 0.18), transparent 22%),
-    radial-gradient(circle at 72% 78%, rgba(227, 93, 79, 0.16), transparent 18%),
-    radial-gradient(circle at 16% 82%, rgba(47, 143, 232, 0.12), transparent 16%),
-    radial-gradient(circle at 1px 1px, rgba(22, 38, 43, 0.045) 1px, transparent 0);
-  background-size: auto, auto, 22px 22px;
-  color: #16262b;
+  @apply bg-paper text-ink antialiased;
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
 html.dark body {
-  background-color: #071114;
-  background-image:
-    radial-gradient(circle at top left, rgba(14, 111, 99, 0.28), transparent 24%),
-    radial-gradient(circle at 84% 16%, rgba(120, 87, 229, 0.26), transparent 20%),
-    radial-gradient(circle at 66% 74%, rgba(227, 93, 79, 0.16), transparent 16%),
-    radial-gradient(circle at 16% 82%, rgba(47, 143, 232, 0.14), transparent 14%),
-    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
-  color: #e8f2ef;
+  @apply bg-navy text-white;
 }
 
-::selection {
-  background: #0e6f63;
-  color: #f5f3ee;
+/* Single, restrained ambient glow tying back to the two brand hues:
+   green in light mode, a soft yellow flicker in dark mode. */
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
 }
 
-html.dark ::selection {
-  background: #8be7d5;
-  color: #071114;
+.ambient-glow::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 60vw;
+  height: 60vw;
+  max-width: 720px;
+  max-height: 720px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.16), transparent 70%);
+  animation: drift 18s ease-in-out infinite alternate;
 }
 
-/* Visible keyboard focus everywhere - accessibility floor */
-:focus-visible {
-  outline: 2px solid #0e6f63;
-  outline-offset: 2px;
-  border-radius: 4px;
+html.dark .ambient-glow::before {
+  background: radial-gradient(circle, rgba(234, 179, 8, 0.12), transparent 70%);
 }
 
-html.dark :focus-visible {
-  outline-color: #8be7d5;
+/* Persistent top signal bar - always mounted, animates gently at
+   idle, brightens while a request is in flight. */
+.signal-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  height: 34px;
+  overflow: hidden;
+  background: linear-gradient(to bottom, rgba(250, 253, 251, 0.96), rgba(250, 253, 251, 0.8));
+  border-bottom: 1px solid #E2E8E4;
+  backdrop-filter: blur(8px);
+}
+
+html.dark .signal-bar {
+  background: linear-gradient(to bottom, rgba(11, 17, 32, 0.96), rgba(11, 17, 32, 0.8));
+  border-bottom: 1px solid #232E45;
+}
+
+.glass-card {
+  @apply bg-panel border border-hairline shadow-card;
+}
+
+html.dark .glass-card {
+  @apply bg-navy-surface border-navy-border shadow-none;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #dad4c4;
-  border-radius: 999px;
-}
-html.dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #21434a;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
+  height: 6px;
 }
 
-.prose-chat {
-  max-width: none;
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 999px;
+}
+
+html.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .prose-chat p {
-  margin: 0;
+  margin: 0 0 0.6em;
 }
 
-.prose-chat p + p,
-.prose-chat ul + p,
-.prose-chat p + ul {
-  margin-top: 0.75rem;
+.prose-chat p:last-child {
+  margin-bottom: 0;
 }
 
 .prose-chat ul,
 .prose-chat ol {
-  margin: 0.75rem 0;
-  padding-left: 1.1rem;
+  margin: 0.4em 0 0.6em;
+  padding-left: 1.2em;
 }
 
-.prose-chat li + li {
-  margin-top: 0.35rem;
+.prose-chat li {
+  margin: 0.15em 0;
 }
 
 .prose-chat strong {
-  color: inherit;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .prose-chat code {
-  border-radius: 0.4rem;
-  background: rgba(14, 111, 99, 0.12);
-  padding: 0.1rem 0.35rem;
-  font-family: var(--font-plex-mono), monospace;
-  font-size: 0.92em;
+  @apply rounded bg-black/5 px-1 py-0.5 font-mono text-[0.85em];
 }
 
 html.dark .prose-chat code {
-  background: rgba(139, 231, 213, 0.12);
+  @apply bg-white/10;
 }
 
-.prose-chat pre {
-  overflow-x: auto;
-  border-radius: 1rem;
-  background: rgba(6, 18, 21, 0.95);
-  padding: 1rem;
-  color: #dbeee9;
-}
-
-.prose-chat pre code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
-}
-
-.prose-chat a {
-  color: #0e6f63;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-}
-
-html.dark .prose-chat a {
-  color: #8be7d5;
-}
-
-.floating-orb {
-  animation: float 9s ease-in-out infinite;
-}
-
-.aurora-band {
-  position: relative;
-}
-
-.aurora-band::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(14, 111, 99, 0.18), rgba(120, 87, 229, 0.18), rgba(227, 93, 79, 0.12));
-  filter: blur(18px);
-  opacity: 0.55;
-  z-index: -1;
-}
-
-.glass-card {
-  position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48));
-}
-
-html.dark .glass-card {
-  background: linear-gradient(135deg, rgba(7, 17, 20, 0.82), rgba(7, 17, 20, 0.52));
-}
-
-.glow-accent {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
-    0 20px 50px rgba(14, 111, 99, 0.16),
-    0 8px 24px rgba(120, 87, 229, 0.12);
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -10px, 0);
-  }
+:focus-visible {
+  outline: 2px solid #16A34A;
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -190,6 +130,5 @@ html.dark .glass-card {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
   }
 }

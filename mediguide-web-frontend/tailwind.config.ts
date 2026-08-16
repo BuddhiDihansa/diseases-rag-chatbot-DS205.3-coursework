@@ -1,56 +1,59 @@
 import type { Config } from "tailwindcss";
 
-// Design tokens - "Clinical Field Notes" direction.
-// See README.md "Design notes" section for the reasoning behind this
-// palette/type system.
+// "Green Signal" palette: green is the brand/primary action color
+// (buttons, verified state, active nav item), light yellow is the
+// secondary accent (AI trace tags, subtle highlights). Neutral
+// light/dark bases keep body text readable - the two brand hues are
+// used deliberately, not painted across every surface.
 const config: Config = {
   darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        paper: "#F5F3EE",
-        panel: "#ECE7DA",
-        ink: "#16262B",
-        "ink-soft": "#4B5B5C",
-        teal: {
-          DEFAULT: "#0E6F63",
-          dark: "#0A5750",
-          soft: "#E3EEEA",
+        paper: "#FAFDFB",
+        panel: "#FFFFFF",
+        ink: "#0F172A",
+        "ink-soft": "#5B6478",
+        hairline: "#E2E8E4",
+
+        sidebar: {
+          DEFAULT: "#F3FAF4",
+          border: "#DCEEDD",
+        },
+
+        navy: {
+          DEFAULT: "#0B1120",
+          surface: "#131C2E",
+          border: "#232E45",
+        },
+
+        primary: {
+          DEFAULT: "#16A34A",
+          dark: "#15803D",
+          soft: "#DCFCE7",
+        },
+        accent: {
+          DEFAULT: "#EAB308",
+          dark: "#A16207",
+          soft: "#FEF9C3",
         },
         amber: {
-          DEFAULT: "#C1502E",
-          soft: "#F5E4DC",
+          DEFAULT: "#D97706",
+          soft: "#FEF3C7",
         },
-        verified: {
-          DEFAULT: "#2E7D53",
-          soft: "#E3EFE4",
+        rose: {
+          DEFAULT: "#E11D48",
+          soft: "#FFE4E6",
         },
-        coral: {
-          DEFAULT: "#E35D4F",
-          soft: "#F8E2DE",
-        },
-        violet: {
-          DEFAULT: "#7857E5",
-          soft: "#ECE7FD",
-        },
-        sky: {
-          DEFAULT: "#2F8FE8",
-          soft: "#E4F1FD",
-        },
-        gold: {
-          DEFAULT: "#C58B1D",
-          soft: "#F7EFD6",
-        },
-        hairline: "#DAD4C4",
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "Georgia", "serif"],
-        body: ["var(--font-inter)", "system-ui", "sans-serif"],
-        mono: ["var(--font-plex-mono)", "monospace"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(22, 38, 43, 0.04), 0 4px 16px rgba(22, 38, 43, 0.06)",
+        card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06)",
       },
       keyframes: {
         pulseline: {
@@ -65,16 +68,17 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        typewriter: {
-          "0%": { width: "0" },
-          "100%": { width: "100%" },
+        drift: {
+          "0%": { transform: "translate3d(0,0,0)" },
+          "100%": { transform: "translate3d(2%, -3%, 0)" },
         },
       },
       animation: {
-        pulseline: "pulseline 1.8s linear infinite",
+        pulseline: "pulseline 1.6s linear infinite",
+        "pulseline-idle": "pulseline 6s linear infinite",
         blink: "blink 1.4s ease-in-out infinite",
         rise: "rise 0.35s ease-out both",
-        typewriter: "typewriter 0.9s steps(30, end) both",
+        drift: "drift 16s ease-in-out infinite alternate",
       },
     },
   },
