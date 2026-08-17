@@ -9,7 +9,7 @@ import { uid } from "@/lib/chatStore";
 import CitationCard from "./CitationCard";
 import PulseDivider from "./PulseDivider";
 import VitalsBadge from "./VitalsBadge";
-import { MenuIcon } from "./icons";
+import { CheckIcon, ChevronDownIcon, CopyIcon, MenuIcon, MoonIcon, SunIcon, TrashIcon } from "./icons";
 
 type Theme = "light" | "dark";
 type Message = ChatMessage;
@@ -46,12 +46,11 @@ export default function Chat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [activeTraceId, setActiveTraceId] = useState<string | null>(null);
+  const [typedMessageId, setTypedMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const lastAssistant = [...session.messages].reverse().find((m) => m.role === "assistant");
-    setActiveTraceId(lastAssistant ? lastAssistant.id : null);
+    setTypedMessageId(null);
     setInput("");
   }, [session.id]);
 
@@ -87,7 +86,7 @@ export default function Chat({
         userMessage,
         { role: "assistant", content: result.answer, id: assistantId, meta: result },
       ]);
-      setActiveTraceId(assistantId);
+      setTypedMessageId(assistantId);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Something went wrong.";
       onMessagesChange([
@@ -102,89 +101,44 @@ export default function Chat({
 
   function clearChat() {
     onMessagesChange([]);
-    setActiveTraceId(null);
+    setTypedMessageId(null);
   }
-
-  const activeTrace = [...messages].reverse().find(
-    (message): message is Extract<Message, { role: "assistant" }> =>
-      message.role === "assistant" && message.id === activeTraceId
-  );
 
   return (
     <div className="relative flex min-h-screen flex-1 flex-col">
       <div className="ambient-glow" />
       <PulseDivider active={loading} />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-5 px-4 pb-6 pt-5 sm:px-6 lg:px-8">
-        <Header onOpenSidebar={onOpenSidebar} sessionTitle={session.title} />
+      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 px-4 pb-6 pt-5 sm:px-6">
+        <Header
+          onOpenSidebar={onOpenSidebar}
+          sessionTitle={session.title}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onClearChat={clearChat}
+        />
 
-        <section className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[1.6fr_1fr]">
-          <div className="glass-card flex min-h-0 flex-col overflow-hidden rounded-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-3.5 dark:border-navy-border">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-primary" />
-                <p className="text-[13px] font-medium text-ink-soft dark:text-white/60">
-                  Answers are checked against retrieved guideline text
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={onToggleTheme}
-                  className="rounded-lg border border-hairline px-3 py-1.5 text-[12px] font-medium text-ink-soft transition hover:border-primary/40 hover:text-ink dark:border-navy-border dark:text-white/60 dark:hover:border-primary/40 dark:hover:text-white"
-                >
-                  {theme === "dark" ? "Light mode" : "Dark mode"}
-                </button>
-                <button
-                  onClick={clearChat}
-                  className="rounded-lg border border-hairline px-3 py-1.5 text-[12px] font-medium text-ink-soft transition hover:border-rose/40 hover:text-rose dark:border-navy-border dark:text-white/60"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-4 overflow-y-auto px-1 py-5 sm:px-2">
+            {messages.length === 0 && <EmptyState onPick={send} />}
 
-            <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
-              {messages.length === 0 && <EmptyState onPick={send} />}
+            {messages.map((message) =>
+              message.role === "user" ? (
+                <UserBubble key={message.id} content={message.content} />
+              ) : (
+                <AssistantBubble
+                  key={message.id}
+                  message={message}
+                  animateTypewriter={!message.error && message.id === typedMessageId && !loading}
+                />
+              )
+            )}
 
-              {messages.map((message) =>
-                message.role === "user" ? (
-                  <UserBubble key={message.id} content={message.content} />
-                ) : (
-                  <AssistantBubble
-                    key={message.id}
-                    message={message}
-                    isActiveTrace={message.id === activeTraceId}
-                    animateTypewriter={!message.error && message.id === activeTraceId && !loading}
-                    onSelectTrace={() => setActiveTraceId(message.id)}
-                  />
-                )
-              )}
-
-              {loading && <ThinkingBubble label={STEP_LABELS[stepIndex]} />}
-            </div>
-
-            <Composer
-              input={input}
-              setInput={setInput}
-              onSend={() => send(input)}
-              disabled={loading}
-            />
+            {loading && <ThinkingBubble label={STEP_LABELS[stepIndex]} />}
           </div>
 
-          <aside className="glass-card flex min-h-0 flex-col overflow-hidden rounded-2xl">
-            <div className="border-b border-hairline px-5 py-3.5 dark:border-navy-border">
-              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-accent">
-                Retrieval trace
-              </p>
-              <p className="mt-1 truncate text-[13px] text-ink-soft dark:text-white/50">
-                {messages.length} message{messages.length === 1 ? "" : "s"} in this chat
-              </p>
-            </div>
-            <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-4">
-              <TracePanel trace={activeTrace} />
-            </div>
-          </aside>
-        </section>
+          <Composer input={input} setInput={setInput} onSend={() => send(input)} disabled={loading} />
+        </div>
       </div>
     </div>
   );
@@ -193,26 +147,55 @@ export default function Chat({
 function Header({
   onOpenSidebar,
   sessionTitle,
+  theme,
+  onToggleTheme,
+  onClearChat,
 }: {
   onOpenSidebar: () => void;
   sessionTitle: string;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onClearChat: () => void;
 }) {
   return (
-    <header className="flex items-center gap-3">
-      <button
-        onClick={onOpenSidebar}
-        aria-label="Open chat history"
-        className="shrink-0 rounded-lg border border-hairline p-2 text-ink-soft transition hover:border-primary/40 dark:border-navy-border dark:text-white/60 lg:hidden"
-      >
-        <MenuIcon className="h-4 w-4" />
-      </button>
-      <div className="min-w-0">
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
-          MediGuide LK
-        </p>
-        <h1 className="truncate font-display text-xl font-bold text-ink dark:text-white sm:text-2xl">
-          {sessionTitle}
-        </h1>
+    <header className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          onClick={onOpenSidebar}
+          aria-label="Open chat history"
+          className="shrink-0 rounded-lg border border-hairline p-2 text-ink-soft transition hover:border-primary/40 dark:border-navy-border dark:text-white/60 lg:hidden"
+        >
+          <MenuIcon className="h-4 w-4" />
+        </button>
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">MediGuide LK</p>
+          <h1 className="truncate font-display text-lg font-bold text-ink dark:text-white sm:text-xl">
+            {sessionTitle}
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          onClick={onClearChat}
+          aria-label="Clear this chat"
+          title="Clear this chat"
+          className="grid h-9 w-9 place-items-center rounded-full border border-hairline text-ink-soft transition hover:border-rose/40 hover:text-rose dark:border-navy-border dark:text-white/60"
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onToggleTheme}
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+          className="grid h-9 w-9 place-items-center rounded-full border border-hairline text-ink-soft transition hover:border-primary/40 dark:border-navy-border dark:text-white/60"
+        >
+          {theme === "dark" ? (
+            <SunIcon className="h-4 w-4 text-accent-dark dark:text-accent" />
+          ) : (
+            <MoonIcon className="h-4 w-4 text-primary" />
+          )}
+        </button>
       </div>
     </header>
   );
@@ -220,8 +203,8 @@ function Header({
 
 function EmptyState({ onPick }: { onPick: (q: string) => void }) {
   return (
-    <div className="flex min-h-[340px] animate-rise flex-col items-center justify-center gap-6 rounded-xl border border-dashed border-hairline px-5 py-10 text-center dark:border-navy-border">
-      <div className="max-w-lg space-y-2">
+    <div className="flex min-h-[320px] animate-rise flex-col items-center justify-center gap-6 rounded-xl border border-dashed border-hairline px-5 py-10 text-center dark:border-navy-border">
+      <div className="max-w-md space-y-2">
         <p className="font-display text-xl font-semibold text-ink dark:text-white">
           Describe how you feel, or ask about a condition
         </p>
@@ -229,7 +212,7 @@ function EmptyState({ onPick }: { onPick: (q: string) => void }) {
           I answer only from verified guideline documents, and show you exactly which passages I used.
         </p>
       </div>
-      <div className="grid w-full max-w-xl gap-2.5 sm:grid-cols-3">
+      <div className="flex w-full max-w-md flex-col gap-2">
         {SUGGESTIONS.map((suggestion) => (
           <button
             key={suggestion}
@@ -256,16 +239,14 @@ function UserBubble({ content }: { content: string }) {
 
 function AssistantBubble({
   message,
-  isActiveTrace,
   animateTypewriter,
-  onSelectTrace,
 }: {
   message: Extract<Message, { role: "assistant" }>;
-  isActiveTrace: boolean;
   animateTypewriter: boolean;
-  onSelectTrace: () => void;
 }) {
   const [visibleText, setVisibleText] = useState(animateTypewriter ? "" : message.content);
+  const [copied, setCopied] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
 
   useEffect(() => {
     if (!animateTypewriter) {
@@ -288,6 +269,16 @@ function AssistantBubble({
     return () => window.clearInterval(timer);
   }, [animateTypewriter, message.content]);
 
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard permissions unavailable - fail silently.
+    }
+  }
+
   if (message.error) {
     return (
       <div className="flex justify-start animate-rise">
@@ -298,35 +289,70 @@ function AssistantBubble({
     );
   }
 
+  const sourceCount = message.meta?.citations.length ?? 0;
+
   return (
     <div className="flex justify-start animate-rise">
-      <button
-        onClick={onSelectTrace}
-        className={`max-w-[85%] rounded-2xl rounded-tl-sm border px-4 py-3 text-left text-[14px] leading-relaxed transition ${
-          isActiveTrace
-            ? "border-primary/30 bg-primary-soft/40 dark:bg-primary/10"
-            : "border-hairline bg-paper hover:border-primary/25 dark:border-navy-border dark:bg-white/[0.02]"
-        }`}
-      >
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-hairline bg-paper px-4 py-3 dark:border-navy-border dark:bg-white/[0.02]">
         <div className="prose-chat text-ink dark:text-white/85">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{visibleText}</ReactMarkdown>
         </div>
+
         {message.meta && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <VitalsBadge faithful={message.meta.faithful} needsReview={message.meta.needs_review} />
-            {message.meta.citations.length > 0 && (
-              <span className="font-mono text-[11px] text-accent">
-                {message.meta.citations.length} source{message.meta.citations.length > 1 ? "s" : ""} · view trace →
-              </span>
+
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-2.5 py-1 font-mono text-[11px] text-ink-soft transition hover:border-primary/40 hover:text-ink dark:border-navy-border dark:text-white/55 dark:hover:text-white"
+            >
+              {copied ? (
+                <CheckIcon className="h-3 w-3 text-primary" />
+              ) : (
+                <CopyIcon className="h-3 w-3" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </button>
+
+            {sourceCount > 0 && (
+              <button
+                onClick={() => setSourcesOpen((open) => !open)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-2.5 py-1 font-mono text-[11px] text-accent-dark transition hover:border-accent/50 dark:border-navy-border dark:text-accent"
+              >
+                {sourceCount} source{sourceCount > 1 ? "s" : ""}
+                <ChevronDownIcon
+                  className={`h-3 w-3 transition-transform duration-200 ${sourcesOpen ? "rotate-180" : ""}`}
+                />
+              </button>
             )}
           </div>
         )}
-        {message.meta && (
-          <div className="mt-3 border-t border-hairline pt-3 dark:border-navy-border xl:hidden">
-            <TracePanel trace={message} compact />
+
+        {message.meta && sourcesOpen && (
+          <div className="mt-3 space-y-3 border-t border-hairline pt-3 dark:border-navy-border">
+            {message.meta.unsupported_claims.length > 0 && (
+              <div className="rounded-lg border border-rose/25 bg-rose-soft p-3 dark:bg-rose/10">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-rose">Flagged claims</p>
+                <ul className="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-6 text-rose/90 dark:text-rose/85">
+                  {message.meta.unsupported_claims.map((claim, index) => (
+                    <li key={`${claim}-${index}`}>{claim}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {message.meta.citations.map((citation, index) => (
+                <CitationCard key={`${citation.source}-${index}`} citation={citation} index={index + 1} />
+              ))}
+            </div>
+
+            <p className="font-mono text-[10px] uppercase tracking-wider text-ink-soft/45 dark:text-white/30">
+              {message.meta.response_time_seconds}s response time
+            </p>
           </div>
         )}
-      </button>
+      </div>
     </div>
   );
 }
@@ -385,69 +411,6 @@ function Composer({
       </div>
       <p className="mt-2 px-1 text-[11px] text-ink-soft/60 dark:text-white/35">
         Enter to send, Shift+Enter for a newline. Informational only — not a substitute for professional medical advice.
-      </p>
-    </div>
-  );
-}
-
-function TracePanel({
-  trace,
-  compact = false,
-}: {
-  trace?: Extract<Message, { role: "assistant" }>;
-  compact?: boolean;
-}) {
-  if (!trace || !trace.meta) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
-        <p className="max-w-[220px] text-[13px] leading-6 text-ink-soft/70 dark:text-white/40">
-          Ask a question — the guideline passages behind the answer will show up here.
-        </p>
-      </div>
-    );
-  }
-
-  const { meta } = trace;
-
-  return (
-    <div className={compact ? "space-y-3" : "space-y-4"}>
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-wider text-ink-soft/60 dark:text-white/35">
-          {meta.is_informational ? "Question" : "Extracted symptoms"}
-        </p>
-        <p className="mt-1 text-[13px] leading-6 text-ink dark:text-white/85">{meta.structured_symptoms}</p>
-      </div>
-
-      {meta.unsupported_claims.length > 0 && (
-        <div className="rounded-lg border border-rose/25 bg-rose-soft p-3 dark:bg-rose/10">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-rose">Flagged claims</p>
-          <ul className="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-6 text-rose/90 dark:text-rose/85">
-            {meta.unsupported_claims.map((claim, index) => (
-              <li key={`${claim}-${index}`}>{claim}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
-          Sources ({meta.citations.length})
-        </p>
-        <div className="mt-2 space-y-2">
-          {meta.citations.length === 0 ? (
-            <p className="text-[13px] leading-6 text-ink-soft/60 dark:text-white/40">
-              No supporting passages were retrieved.
-            </p>
-          ) : (
-            meta.citations.map((citation, index) => (
-              <CitationCard key={`${citation.source}-${index}`} citation={citation} index={index + 1} />
-            ))
-          )}
-        </div>
-      </div>
-
-      <p className="font-mono text-[10px] uppercase tracking-wider text-ink-soft/45 dark:text-white/30">
-        {meta.response_time_seconds}s response time
       </p>
     </div>
   );

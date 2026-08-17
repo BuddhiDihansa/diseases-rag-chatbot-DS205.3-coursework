@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Chat from "@/components/Chat";
 import Sidebar from "@/components/Sidebar";
+import DoctorRobot from "@/components/DoctorRobot";
 import {
   THEME_KEY,
   createSession,
@@ -120,6 +121,8 @@ export default function Home() {
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-paper dark:bg-navy">
+      <DoctorRobot />
+
       <Sidebar
         sessions={sessions}
         activeId={activeSession.id}

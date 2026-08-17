@@ -72,6 +72,22 @@ const config: Config = {
           "0%": { transform: "translate3d(0,0,0)" },
           "100%": { transform: "translate3d(2%, -3%, 0)" },
         },
+        roam: {
+          "0%": { left: "30%", top: "12%" },
+          "20%": { left: "90%", top: "9%" },
+          "40%": { left: "92%", top: "55%" },
+          "60%": { left: "60%", top: "86%" },
+          "80%": { left: "32%", top: "58%" },
+          "100%": { left: "30%", top: "12%" },
+        },
+        bob: {
+          "0%, 100%": { transform: "translateY(0) rotate(-2deg)" },
+          "50%": { transform: "translateY(-10px) rotate(2deg)" },
+        },
+        wave: {
+          "0%, 100%": { transform: "rotate(-8deg)" },
+          "50%": { transform: "rotate(24deg)" },
+        },
       },
       animation: {
         pulseline: "pulseline 1.6s linear infinite",
@@ -79,6 +95,9 @@ const config: Config = {
         blink: "blink 1.4s ease-in-out infinite",
         rise: "rise 0.35s ease-out both",
         drift: "drift 16s ease-in-out infinite alternate",
+        roam: "roam 38s ease-in-out infinite",
+        bob: "bob 2.6s ease-in-out infinite",
+        wave: "wave 1.8s ease-in-out infinite",
       },
     },
   },
