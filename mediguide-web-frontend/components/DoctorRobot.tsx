@@ -1,6 +1,43 @@
 "use client";
 
-export default function DoctorRobot() {
+import { useEffect, useState } from "react";
+
+export type RobotState =
+  | "idle"
+  | "listening"
+  | "thinking"
+  | "happy"
+  | "error";
+
+export default function DoctorRobot({
+  state = "idle",
+}: {
+  state?: RobotState;
+}) {
+  const [showWelcome, setShowWelcome] =
+    useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShowWelcome(false);
+    }, 5000);
+
+    return () =>
+      window.clearTimeout(timer);
+  }, []);
+
+  /*
+   * Keep the robot visually subtle
+   * so it does not cover the chat UI.
+   */
+  const stateLabel = {
+    idle: "",
+    listening: "I'm listening 👀",
+    thinking: "Let me check that 🤔",
+    happy: "I've got an answer! 😊",
+    error: "Something went wrong 😟",
+  }[state];
+
   return (
     <div
       className="
@@ -14,9 +51,105 @@ export default function DoctorRobot() {
       "
       aria-hidden="true"
     >
-      <div className="relative h-[125px] w-[105px] sm:h-[155px] sm:w-[130px] animate-robot-idle">
 
-        {/* Ground glow */}
+      {/* =========================================
+          SPEECH BUBBLE
+      ========================================= */}
+
+      {(showWelcome || state !== "idle") && (
+        <div
+          className="
+            absolute
+            bottom-[135px]
+            right-0
+            w-[205px]
+            animate-robot-bubble
+            rounded-2xl
+            border
+            border-primary/15
+            bg-white
+            px-4
+            py-3
+            shadow-[0_12px_35px_rgba(15,23,42,0.14)]
+            dark:border-white/10
+            dark:bg-navy-surface
+          "
+        >
+
+          <div
+            className="
+              text-[12px]
+              font-semibold
+              leading-5
+              text-ink
+              dark:text-white
+            "
+          >
+            {state === "idle"
+              ? "Hi! I'm your MediRAG assistant 👋"
+              : stateLabel}
+          </div>
+
+          {state === "idle" && (
+            <div
+              className="
+                mt-1
+                text-[10px]
+                leading-4
+                text-ink-soft
+                dark:text-slate-400
+              "
+            >
+              Ask me about diseases,
+              symptoms and medical information.
+            </div>
+          )}
+
+          <div
+            className="
+              absolute
+              -bottom-2
+              right-8
+              h-4
+              w-4
+              rotate-45
+              border-b
+              border-r
+              border-primary/15
+              bg-white
+              dark:border-white/10
+              dark:bg-navy-surface
+            "
+          />
+        </div>
+      )}
+
+      {/* =========================================
+          ROBOT
+      ========================================= */}
+
+      <div
+        className={`
+          relative
+          h-[125px]
+          w-[105px]
+          sm:h-[155px]
+          sm:w-[130px]
+
+          ${
+            state === "thinking"
+              ? "animate-robot-thinking"
+              : state === "happy"
+              ? "animate-robot-happy"
+              : state === "listening"
+              ? "animate-robot-listening"
+              : "animate-robot-idle"
+          }
+        `}
+      >
+
+        {/* Ground shadow */}
+
         <div
           className="
             absolute
@@ -28,6 +161,7 @@ export default function DoctorRobot() {
             rounded-full
             bg-primary/20
             blur-md
+            animate-robot-shadow
           "
         />
 
@@ -42,9 +176,9 @@ export default function DoctorRobot() {
           "
         >
 
-          {/* ========================= */}
-          {/* ANTENNA */}
-          {/* ========================= */}
+          {/* =======================================
+              ANTENNA
+          ======================================= */}
 
           <path
             d="M90 35 C90 25 90 19 90 12"
@@ -58,13 +192,19 @@ export default function DoctorRobot() {
             cx="90"
             cy="10"
             r="7"
-            fill="#EAB308"
+            fill={
+              state === "thinking"
+                ? "#EAB308"
+                : state === "error"
+                ? "#E11D48"
+                : "#16A34A"
+            }
             className="animate-robot-blink"
           />
 
-          {/* ========================= */}
-          {/* EARS */}
-          {/* ========================= */}
+          {/* =======================================
+              EARS
+          ======================================= */}
 
           <circle
             cx="27"
@@ -80,9 +220,9 @@ export default function DoctorRobot() {
             fill="#16A34A"
           />
 
-          {/* ========================= */}
-          {/* HEAD */}
-          {/* ========================= */}
+          {/* =======================================
+              HEAD
+          ======================================= */}
 
           <rect
             x="28"
@@ -95,7 +235,18 @@ export default function DoctorRobot() {
             strokeWidth="5"
           />
 
-          {/* Face screen */}
+          <rect
+            x="39"
+            y="45"
+            width="102"
+            height="70"
+            rx="25"
+            fill="#EFF6FF"
+          />
+
+          {/* =======================================
+              FACE SCREEN
+          ======================================= */}
 
           <rect
             x="45"
@@ -106,9 +257,9 @@ export default function DoctorRobot() {
             fill="#0F172A"
           />
 
-          {/* ========================= */}
-          {/* EYES */}
-          {/* ========================= */}
+          {/* =======================================
+              EYES
+          ======================================= */}
 
           <circle
             cx="68"
@@ -126,28 +277,54 @@ export default function DoctorRobot() {
             className="animate-robot-eye"
           />
 
-          {/* ========================= */}
-          {/* SMILE */}
-          {/* ========================= */}
+          {/* =======================================
+              MOUTH
+          ======================================= */}
 
-          <path
-            d="M75 92 Q90 104 105 92"
-            stroke="#EAB308"
-            strokeWidth="5"
-            fill="none"
-            strokeLinecap="round"
-          />
+          {state === "happy" ? (
+            <path
+              d="M70 88 Q90 108 110 88"
+              stroke="#EAB308"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="round"
+            />
+          ) : state === "thinking" ? (
+            <circle
+              cx="90"
+              cy="94"
+              r="5"
+              fill="#EAB308"
+              className="animate-robot-thinking-dot"
+            />
+          ) : state === "error" ? (
+            <path
+              d="M75 100 Q90 88 105 100"
+              stroke="#E11D48"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="round"
+            />
+          ) : (
+            <path
+              d="M75 92 Q90 104 105 92"
+              stroke="#EAB308"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="round"
+            />
+          )}
 
-          {/* ========================= */}
-          {/* CHEEKS */}
-          {/* ========================= */}
+          {/* =======================================
+              CHEEKS
+          ======================================= */}
 
           <circle
             cx="55"
             cy="94"
             r="4"
             fill="#F472B6"
-            opacity="0.6"
+            opacity="0.65"
           />
 
           <circle
@@ -155,12 +332,12 @@ export default function DoctorRobot() {
             cy="94"
             r="4"
             fill="#F472B6"
-            opacity="0.6"
+            opacity="0.65"
           />
 
-          {/* ========================= */}
-          {/* NECK */}
-          {/* ========================= */}
+          {/* =======================================
+              NECK
+          ======================================= */}
 
           <rect
             x="76"
@@ -171,9 +348,9 @@ export default function DoctorRobot() {
             fill="#16A34A"
           />
 
-          {/* ========================= */}
-          {/* BODY */}
-          {/* ========================= */}
+          {/* =======================================
+              BODY
+          ======================================= */}
 
           <rect
             x="39"
@@ -186,7 +363,9 @@ export default function DoctorRobot() {
             strokeWidth="5"
           />
 
-          {/* Chest */}
+          {/* =======================================
+              CHEST PANEL
+          ======================================= */}
 
           <rect
             x="63"
@@ -197,7 +376,9 @@ export default function DoctorRobot() {
             fill="#EFF6FF"
           />
 
-          {/* Medical cross */}
+          {/* =======================================
+              MEDICAL CROSS
+          ======================================= */}
 
           <rect
             x="86"
@@ -217,9 +398,9 @@ export default function DoctorRobot() {
             fill="#16A34A"
           />
 
-          {/* ========================= */}
-          {/* LEFT ARM */}
-          {/* ========================= */}
+          {/* =======================================
+              LEFT ARM
+          ======================================= */}
 
           <rect
             x="22"
@@ -232,11 +413,23 @@ export default function DoctorRobot() {
             strokeWidth="5"
           />
 
-          {/* ========================= */}
-          {/* RIGHT ARM */}
-          {/* ========================= */}
+          {/* =======================================
+              RIGHT ARM
+          ======================================= */}
 
-          <g className="animate-robot-wave">
+          <g
+            className={
+              state === "happy"
+                ? "animate-robot-wave"
+                : state === "listening"
+                ? "animate-robot-listen-arm"
+                : ""
+            }
+            style={{
+              transformOrigin:
+                "147px 145px",
+            }}
+          >
             <rect
               x="137"
               y="139"
@@ -258,15 +451,24 @@ export default function DoctorRobot() {
             />
           </g>
 
-          {/* Small chest light */}
+          {/* =======================================
+              STATUS LIGHT
+          ======================================= */}
 
           <circle
             cx="128"
             cy="149"
             r="4"
-            fill="#EAB308"
+            fill={
+              state === "thinking"
+                ? "#EAB308"
+                : state === "error"
+                ? "#E11D48"
+                : "#16A34A"
+            }
             className="animate-robot-blink"
           />
+
         </svg>
       </div>
     </div>

@@ -1,9 +1,5 @@
 import type { Config } from "tailwindcss";
 
-// MediRAG Tailwind configuration
-// Green = primary medical/AI brand
-// Yellow = secondary AI accent
-
 const config: Config = {
   darkMode: "class",
 
@@ -14,10 +10,6 @@ const config: Config = {
 
   theme: {
     extend: {
-      /* =========================================
-         COLORS
-      ========================================= */
-
       colors: {
         paper: "#FAFDFB",
         panel: "#FFFFFF",
@@ -59,10 +51,6 @@ const config: Config = {
         },
       },
 
-      /* =========================================
-         FONTS
-      ========================================= */
-
       fontFamily: {
         display: [
           "var(--font-display)",
@@ -82,29 +70,16 @@ const config: Config = {
         ],
       },
 
-      /* =========================================
-         SHADOWS
-      ========================================= */
-
       boxShadow: {
         card:
           "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06)",
       },
 
-      /* =========================================
-         KEYFRAMES
-      ========================================= */
-
       keyframes: {
-        /* -----------------------------------------
-           EXISTING WEBSITE ANIMATIONS
-        ----------------------------------------- */
-
         pulseline: {
           "0%": {
             strokeDashoffset: "240",
           },
-
           "100%": {
             strokeDashoffset: "0",
           },
@@ -114,7 +89,6 @@ const config: Config = {
           "0%, 100%": {
             opacity: "1",
           },
-
           "50%": {
             opacity: "0.25",
           },
@@ -125,7 +99,6 @@ const config: Config = {
             opacity: "0",
             transform: "translateY(6px)",
           },
-
           "100%": {
             opacity: "1",
             transform: "translateY(0)",
@@ -136,43 +109,32 @@ const config: Config = {
           "0%": {
             transform: "translate3d(0,0,0)",
           },
-
           "100%": {
             transform: "translate3d(2%, -3%, 0)",
           },
         },
-
-        /* -----------------------------------------
-           OLD ROBOT ANIMATIONS
-           Kept so nothing else breaks.
-        ----------------------------------------- */
 
         roam: {
           "0%": {
             left: "30%",
             top: "12%",
           },
-
           "20%": {
             left: "90%",
             top: "9%",
           },
-
           "40%": {
             left: "92%",
             top: "55%",
           },
-
           "60%": {
             left: "60%",
             top: "86%",
           },
-
           "80%": {
             left: "32%",
             top: "58%",
           },
-
           "100%": {
             left: "30%",
             top: "12%",
@@ -181,11 +143,12 @@ const config: Config = {
 
         bob: {
           "0%, 100%": {
-            transform: "translateY(0) rotate(-2deg)",
+            transform:
+              "translateY(0) rotate(-2deg)",
           },
-
           "50%": {
-            transform: "translateY(-10px) rotate(2deg)",
+            transform:
+              "translateY(-10px) rotate(2deg)",
           },
         },
 
@@ -193,37 +156,42 @@ const config: Config = {
           "0%, 100%": {
             transform: "rotate(-8deg)",
           },
-
           "50%": {
             transform: "rotate(24deg)",
           },
         },
 
-        /* =========================================
-           NEW MEDIRAG ROBOT ANIMATIONS
-        ========================================= */
-
-        /**
-         * Main idle movement.
-         *
-         * The robot gently floats up and down.
-         * Slow enough that it does not distract the user.
-         */
         robotIdle: {
           "0%, 100%": {
             transform:
               "translateY(0px) rotate(-1deg)",
           },
-
           "50%": {
             transform:
               "translateY(-7px) rotate(1deg)",
           },
         },
 
-        /**
-         * Robot hand wave.
-         */
+        robotWelcome: {
+          "0%": {
+            opacity: "0",
+            transform:
+              "translate(35px, 25px) scale(0.75)",
+          },
+
+          "60%": {
+            opacity: "1",
+            transform:
+              "translate(-5px, -4px) scale(1.04)",
+          },
+
+          "100%": {
+            opacity: "1",
+            transform:
+              "translate(0, 0) scale(1)",
+          },
+        },
+
         robotWave: {
           "0%, 100%": {
             transform: "rotate(0deg)",
@@ -238,9 +206,6 @@ const config: Config = {
           },
         },
 
-        /**
-         * Antenna / small light blinking.
-         */
         robotBlink: {
           "0%, 92%, 100%": {
             opacity: "1",
@@ -251,9 +216,6 @@ const config: Config = {
           },
         },
 
-        /**
-         * Small eye movement.
-         */
         robotEye: {
           "0%, 100%": {
             transform: "scale(1)",
@@ -263,17 +225,109 @@ const config: Config = {
             transform: "scale(0.85)",
           },
         },
+
+        robotShadow: {
+          "0%, 100%": {
+            transform:
+              "translateX(-50%) scaleX(1)",
+            opacity: "0.55",
+          },
+
+          "50%": {
+            transform:
+              "translateX(-50%) scaleX(0.75)",
+            opacity: "0.25",
+          },
+        },
+
+        robotBubble: {
+          "0%": {
+            opacity: "0",
+            transform:
+              "translateY(8px) scale(0.94)",
+          },
+
+          "100%": {
+            opacity: "1",
+            transform:
+              "translateY(0) scale(1)",
+          },
+        },
+
+        /* =====================================
+           NEW INTERACTION ANIMATIONS
+        ===================================== */
+
+        robotThinking: {
+          "0%, 100%": {
+            transform:
+              "translateY(0) rotate(-1deg)",
+          },
+
+          "50%": {
+            transform:
+              "translateY(-4px) rotate(3deg)",
+          },
+        },
+
+        robotHappy: {
+          "0%, 100%": {
+            transform:
+              "translateY(0) rotate(-2deg)",
+          },
+
+          "25%": {
+            transform:
+              "translateY(-9px) rotate(3deg)",
+          },
+
+          "50%": {
+            transform:
+              "translateY(-4px) rotate(-2deg)",
+          },
+
+          "75%": {
+            transform:
+              "translateY(-9px) rotate(3deg)",
+          },
+        },
+
+        robotListening: {
+          "0%, 100%": {
+            transform:
+              "translateY(0) rotate(0deg)",
+          },
+
+          "50%": {
+            transform:
+              "translateY(-5px) rotate(-2deg)",
+          },
+        },
+
+        robotThinkingDot: {
+          "0%, 100%": {
+            transform: "scale(0.7)",
+            opacity: "0.5",
+          },
+
+          "50%": {
+            transform: "scale(1.15)",
+            opacity: "1",
+          },
+        },
+
+        robotListenArm: {
+          "0%, 100%": {
+            transform: "rotate(0deg)",
+          },
+
+          "50%": {
+            transform: "rotate(-8deg)",
+          },
+        },
       },
 
-      /* =========================================
-         ANIMATIONS
-      ========================================= */
-
       animation: {
-        /* -----------------------------------------
-           EXISTING WEBSITE ANIMATIONS
-        ----------------------------------------- */
-
         pulseline:
           "pulseline 1.6s linear infinite",
 
@@ -298,33 +352,41 @@ const config: Config = {
         wave:
           "wave 1.8s ease-in-out infinite",
 
-        /* -----------------------------------------
-           MEDIRAG ROBOT
-        ----------------------------------------- */
-
-        /**
-         * Robot floating.
-         */
         "robot-idle":
           "robotIdle 3.2s ease-in-out infinite",
 
-        /**
-         * Robot waving.
-         */
+        "robot-welcome":
+          "robotWelcome 0.8s cubic-bezier(.2,.8,.2,1) both",
+
         "robot-wave":
           "robotWave 0.9s ease-in-out infinite",
 
-        /**
-         * Robot antenna blinking.
-         */
         "robot-blink":
           "robotBlink 4s ease-in-out infinite",
 
-        /**
-         * Robot eyes.
-         */
         "robot-eye":
           "robotEye 1.8s ease-in-out infinite",
+
+        "robot-shadow":
+          "robotShadow 3.2s ease-in-out infinite",
+
+        "robot-bubble":
+          "robotBubble 0.35s ease-out both",
+
+        "robot-thinking":
+          "robotThinking 2s ease-in-out infinite",
+
+        "robot-happy":
+          "robotHappy 1.8s ease-in-out infinite",
+
+        "robot-listening":
+          "robotListening 2.4s ease-in-out infinite",
+
+        "robot-thinking-dot":
+          "robotThinkingDot 1s ease-in-out infinite",
+
+        "robot-listen-arm":
+          "robotListenArm 1.5s ease-in-out infinite",
       },
     },
   },
